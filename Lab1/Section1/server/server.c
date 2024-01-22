@@ -8,6 +8,7 @@
 int main(){
     printf("Hello worlddddd\n");
 
+    int fd = socket(AF_INET, SOCK_DGRAM, AF_INET);
 
     return 0;
 }

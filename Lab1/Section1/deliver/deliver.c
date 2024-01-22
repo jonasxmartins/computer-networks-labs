@@ -29,7 +29,9 @@ int main(int argc, char *argv[]) {
 
 
     
+    int fd = socket(AF_INET, SOCK_DGRAM, AF_INET);
 
+    
 
     return EXIT_SUCCESS;
 }
