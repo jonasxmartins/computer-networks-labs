@@ -6,9 +6,16 @@
 #include <sys/socket.h>
 
 int main(){
-    printf("Hello worlddddd\n");
 
     int fd = socket(AF_INET, SOCK_DGRAM, AF_INET);
+
+    const struct sockaddr *addr;
+
+    if (bind(fd, addr, sizeof(addr)) == -1)
+    {
+        perror("bind");
+        exit(77);
+    }
 
     return 0;
 }
