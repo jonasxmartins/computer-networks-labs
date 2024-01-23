@@ -18,6 +18,8 @@ int main(int argc, char *argv[]) {
     }
     int socketfd = socket(AF_INET, SOCK_DGRAM, 0);
 
+    printf("Input the name of a file to tranfer in the following form:\n\n      ftp <filename>\n\n");
+
     char input[64];
     fgets(input, sizeof(input), stdin);
     
@@ -39,46 +41,61 @@ int main(int argc, char *argv[]) {
     // Convert port number from string to int and then to network byte order
     int port = atoi(argv[2]);
     server_addr.sin_port = htons(port);
-
-    if (command != NULL && strcmp(command, "ftp") == 0) {
-        if (filename != NULL) {
+    
+    if (command != NULL) 
+    {
+        if (filename != NULL) 
+        {
             struct stat buffer;
             int exist = stat(filename, &buffer);
-            if (exist == 0) {
-                    char message[64] = "ftp\0";
-                    if (sendto(socketfd, (const void *) &message, strlen(message)+1, 0, (const struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
-                        perror("sendto");
-                        close(socketfd);
-                        exit(EXIT_FAILURE);
-                    }
-                    char buf[64];
+            if (exist == 0) 
+            {
+                char message[64];
+                strcpy(message, command);
 
-                    //line 56-57 not necessary, but good practice
-                    struct sockaddr_storage src_addr;
-                    socklen_t addr_len = sizeof(src_addr);
-                    
-                    int bytes_recv = recvfrom(socketfd, (void *)&buf, sizeof(buf), 0, (struct sockaddr*)&src_addr, &addr_len);
-                    if ( bytes_recv < 0) {
-                        perror("recvfrom");
-                        close(socketfd);
-                        exit(EXIT_FAILURE);
-                    }
-                    buf[bytes_recv] = '\0';
-
-
-                    if (strcmp(strtrim(buf), "yes") == 0){
-                        printf("A file transfer can start.");
-                    }
+                if (sendto(socketfd, (const void *) &message, strlen(message)+1, 0, (const struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
+                    perror("sendto");
                     close(socketfd);
-            } else {
+                    exit(EXIT_FAILURE);
+                }
+                char buf[64];
+                
+                //line 56-57 not necessary, but good practice
+                struct sockaddr_storage src_addr;
+                socklen_t addr_len = sizeof(src_addr);
+                
+                int bytes_recv = recvfrom(socketfd, (void *)&buf, sizeof(buf), 0, (struct sockaddr*)&src_addr, &addr_len);
+                if ( bytes_recv < 0) {
+                    perror("recvfrom");
+                    close(socketfd);
+                    exit(EXIT_FAILURE);
+                }
+                buf[bytes_recv] = '\0';
+
+                if (strcmp(buf, "yes") == 0){
+                    printf("A file transfer can start.\n");
+                }
+                else 
+                {
+                    printf("Invalid command\n");
+                }
+                close(socketfd);
+            } 
+            else 
+            {
+                fprintf(stderr, "error: file does not exist");
                 close(socketfd);
                 exit(EXIT_FAILURE);
             }
-        } else {
+        }
+        else 
+        {
             close(socketfd);
             exit(EXIT_FAILURE);
         }
-    } else {
+    } 
+    else 
+    {
         close(socketfd);
         exit(EXIT_FAILURE);
     }

@@ -85,22 +85,15 @@ int main(int argc, char *argv[]){
         exit(89);
     }
 
-    char *returnMsg = "init";
+    buffer[bytes_received] = '\0';
+
+    printf("recieved %s \n", buffer);
+
+    char *returnMsg = "no";
     char *expected = "ftp";
 
-    // processes and compares message
-    if (bytes_received != 3) {returnMsg = "no";}
-    else 
-    {
-        char received[bytes_received+1];
-        for (int i = 0; i < bytes_received; i++)
-        {
-            received[i] = buffer[i];
-        }
-        received[bytes_received] = '\0';
-        if (strcmp(expected, received) == 0) {returnMsg = "yes";} 
-        else {returnMsg = "no";}
-    }
+    // compares message
+    if (strcmp(expected, buffer) == 0) {returnMsg = "yes";}
 
     // sends answer back
     int bytes_sent = sendto(fd, returnMsg, strlen(returnMsg)+1, 0, (struct sockaddr*)&sourceAddress, size);
