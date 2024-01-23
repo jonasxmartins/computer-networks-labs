@@ -106,7 +106,6 @@ int main(int argc, char *argv[]){
 
     // frees up and closes all the necessary objects
     freeaddrinfo(serverInfo);
-    close(fd);
 
     return 0;
 }
