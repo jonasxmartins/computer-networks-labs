@@ -16,7 +16,7 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "Usage: %s host_address port\n", argv[0]);
         return EXIT_FAILURE;
     }
-    int socketfd = socket(AF_INET, SOCK_DGRAM, AF_INET);
+    int socketfd = socket(AF_INET, SOCK_DGRAM, 0);
 
     char input[64];
     fgets(input, sizeof(input), stdin);
@@ -62,7 +62,10 @@ int main(int argc, char *argv[]) {
                         close(socketfd);
                         exit(EXIT_FAILURE);
                     }
-                    printf("%s", buf);
+
+                    if (strcmp(strtrim(buf), "yes") == 0){
+                        printf("A file transfer can start.");
+                    }
                     close(socketfd);
             } else {
                 close(socketfd);
