@@ -57,11 +57,14 @@ int main(int argc, char *argv[]) {
                     struct sockaddr_storage src_addr;
                     socklen_t addr_len = sizeof(src_addr);
                     
-                    if (recvfrom(socketfd, (void *)&buf, sizeof(buf), 0, (struct sockaddr*)&src_addr, &addr_len) < 0) {
+                    int bytes_recv = recvfrom(socketfd, (void *)&buf, sizeof(buf), 0, (struct sockaddr*)&src_addr, &addr_len);
+                    if ( bytes_recv < 0) {
                         perror("recvfrom");
                         close(socketfd);
                         exit(EXIT_FAILURE);
                     }
+                    buf[bytes_recv] = '\0';
+
 
                     if (strcmp(strtrim(buf), "yes") == 0){
                         printf("A file transfer can start.");
