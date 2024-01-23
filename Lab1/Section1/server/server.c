@@ -13,7 +13,7 @@ int main(){
 
     if (bind(fd, addr, sizeof(addr)) == -1)
     {
-        perror("bind");
+        perror("bind ain't working");
         exit(77);
     }
 
