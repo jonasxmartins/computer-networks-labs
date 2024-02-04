@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
             } 
             else 
             {
-                fprintf(stderr, "error: file does not exist");
+                fprintf(stderr, "error: file does not exist\n");
                 close(socketfd);
                 exit(EXIT_FAILURE);
             }
