@@ -8,8 +8,12 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <unistd.h>
+#include <sys/time.h>
+#include <time.h>
 
-
+#define SECONDS_IN_MICRO 1000000
+// RTT is 617 microseconds
+struct timeval start, end;
 
 int main(int argc, char *argv[]) {
     if (argc != 3) {
@@ -53,6 +57,8 @@ int main(int argc, char *argv[]) {
                 char message[64];
                 strcpy(message, command);
 
+                gettimeofday(&start, NULL);
+
                 if (sendto(socketfd, (const void *) &message, strlen(message)+1, 0, (const struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
                     perror("sendto");
                     close(socketfd);
@@ -70,6 +76,8 @@ int main(int argc, char *argv[]) {
                     close(socketfd);
                     exit(EXIT_FAILURE);
                 }
+                gettimeofday(&end, NULL);
+
                 buf[bytes_recv] = '\0';
 
                 if (strcmp(buf, "yes") == 0){
@@ -99,5 +107,14 @@ int main(int argc, char *argv[]) {
         close(socketfd);
         exit(EXIT_FAILURE);
     }
+
+    double seconds = difftime(end.tv_sec, start.tv_sec);
+
+    
+    long int microseconds = (long int)(seconds*SECONDS_IN_MICRO + end.tv_usec - start.tv_usec);
+
+    //printf("%li microseconds passed.\n", microseconds); 
+
+
     return EXIT_SUCCESS;
 }
