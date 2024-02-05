@@ -125,7 +125,7 @@ int main(int argc, char *argv[]){
 
     if (number_of_fragments == 1)
     {
-        data_size = packetList[0].size
+        data_size = packetList[0].size;
         data = (char*)malloc(data_size);
     }
     else
