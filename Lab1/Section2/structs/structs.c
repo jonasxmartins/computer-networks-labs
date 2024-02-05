@@ -25,9 +25,9 @@ struct packet makeStruct(char buffer[BUFFERSIZE], int num_bytes)
     return pack;
 }
 
-void makeMessage(struct packet *pack,  char message[sizeof(struct packet)])
+int makeMessage(struct packet *pack,  char message[BUFFERSIZE])
 {
-    int check = snprintf(message, sizeof(struct packet), "%u%u%u%s%s", 
+    int check = snprintf(message, BUFFERSIZE, "%u:%u:%u:%s:%s", 
                 pack->total_frag, pack->frag_no, pack->size, 
                 pack->filename, pack->filedata);
     if (check <= 0) 
@@ -35,4 +35,33 @@ void makeMessage(struct packet *pack,  char message[sizeof(struct packet)])
         perror("make message");
         exit(888);
     }
+    return check;
+}
+
+struct ack acknowledgeToPacket(char buffer[BUFFERSIZE], int num_bytes)
+{
+    buffer[num_bytes] = '\0';
+
+    char* fragNo = strtok(buffer, ":");
+    char* filename = strtok(NULL, ":");
+
+    struct ack pack;
+
+    pack.filename = filename;
+    pack.frag_no = atoi(fragNo);
+
+    return pack;
+
+}
+
+int makeAcknowledgement(char* filename, unsigned int frag_no, char message[BUFFERSIZE])
+{
+        int check = snprintf(message, BUFFERSIZE, "%s:%u", filename, frag_no);
+
+        if (check <= 0) 
+        {
+            perror("make ack");
+            exit(888);
+        }
+        return check;
 }

@@ -18,6 +18,13 @@ struct ack{
 
 struct packet makeStruct(char buffer[BUFFERSIZE], int num_bytes);
 
-void makeMessage(struct packet *pack, char message[sizeof(struct packet)]);
+int makeMessage(struct packet *pack, char message[BUFFERSIZE]);
+
+
+struct ack acknowledgeToPacket(char buffer[BUFFERSIZE], int num_bytes);
+
+int makeAcknowledgement(char* filename, unsigned int frag_no, char message[BUFFERSIZE]);
+
+
 
 #endif

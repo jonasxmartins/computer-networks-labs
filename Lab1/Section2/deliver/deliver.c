@@ -10,7 +10,7 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include <time.h>
-#include "include/structs.h"
+#include "structs/structs.h"
 
 #define SECONDS_IN_MICRO 1000000
 // RTT is 617 microseconds

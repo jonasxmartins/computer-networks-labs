@@ -28,4 +28,4 @@ structs/%.o: structs/%.c
 
 # Clean the build
 clean:
-	rm -f server/*.o deliver/*.o server/server deliver/deliver structs/*.o structs/structs
+	rm -f server/*.o deliver/*.o structs/*.o server/server deliver/deliver structs/structs
