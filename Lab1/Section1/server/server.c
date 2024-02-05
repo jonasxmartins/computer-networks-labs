@@ -6,11 +6,21 @@
 #include <sys/socket.h>
 
 
-#define BUFFERSIZE 1000
+#define BUFFERSIZE 2048
 
 /* This code was made with the help of Beej's Guide to Network Programming,
    especially section 5.1 - 5.8 and 6.3
    This resource can be found at https://beej.us/guide/bgnet/html/#getaddrinfoprepare-to-launch */
+
+struct packet {
+    unsigned int total_frag;
+    unsigned int frag_no;
+    unsigned int size;
+    char* filename;
+    char filedata[1000];
+}
+
+struct packet makeStruct(char buffer[BUFFERSIZE], int size);
 
 int main(int argc, char *argv[]){
     
@@ -81,20 +91,11 @@ int main(int argc, char *argv[]){
     int bytes_received = recvfrom(fd, buffer, BUFFERSIZE, 0, (struct sockaddr*)&sourceAddress, &size);
     if (bytes_received == -1)
     {
-
         perror("receive");
         exit(89);
     }
 
-    buffer[bytes_received] = '\0';
 
-    printf("recieved %s \n", buffer);
-
-    char *returnMsg = "no";
-    char *expected = "ftp";
-
-    // compares message
-    if (strcmp(expected, buffer) == 0) {returnMsg = "yes";}
 
     // sends answer back
     int bytes_sent = sendto(fd, returnMsg, strlen(returnMsg)+1, 0, (struct sockaddr*)&sourceAddress, size);
@@ -102,5 +103,29 @@ int main(int argc, char *argv[]){
     // frees up and closes all the necessary objects
     freeaddrinfo(serverInfo);
 
+    
+
     return 0;
+}
+
+
+struct packet makeStruct(char buffer[BUFFERSIZE], int size)
+{
+    buffer[size] = '\0';
+
+    char* totalFrag = strtok(buffer, ":");
+    char* fragNo = strtok(NULL, ":");
+    char* size = strtok(NULL, ":");
+    char* filename = strtok(NULL, ":");
+    char* filedata = strtok(NULL, ":");
+
+    struct packet pack;
+
+    pack.total_frag = atoi(totalFrag);
+    pack.frag_no = atoi(fragNo);
+    pack.size = atoi(size);
+    pack.filename = filename;
+    pack.filedata = filedata;
+
+    return pack;
 }
