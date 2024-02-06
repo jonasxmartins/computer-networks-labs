@@ -77,6 +77,8 @@ int main(int argc, char *argv[]){
     struct sockaddr_storage sourceAddress;
     socklen_t size = sizeof(sourceAddress);
 
+// should work until here
+
     // wait to receive information from opened socket
     int bytes_received = recvfrom(fd, buffer, BUFFERSIZE, 0, (struct sockaddr*)&sourceAddress, &size);
     if (bytes_received == -1)
@@ -90,12 +92,18 @@ int main(int argc, char *argv[]){
     struct packet *packetList = (struct packet*)malloc(pack.total_frag*sizeof(struct packet));
     packetList[0] = pack;
 
-    int number_of_fragments = pack.total_frag;
+    unsigned int number_of_fragments = pack.total_frag;
 
     // send acknowledgement back
     char ack[BUFFERSIZE];
     int size_ack = makeAcknowledgement(pack.filename, pack.frag_no, ack);
     int bytes_sent = sendto(fd, ack, size_ack, 0, (struct sockaddr*)&sourceAddress, size);
+    if (bytes_sent == -1)
+    {
+        perror("send acknowledge");
+        exit(89);
+    }
+printf("This amount of fragments: %u\n", number_of_fragments);
 
     // create list of packets
     for (int i = 1; i < number_of_fragments; i++)
@@ -108,8 +116,8 @@ int main(int argc, char *argv[]){
         }
 
         pack = makeStruct(buffer, bytes_received);
-
         packetList[i] = pack;
+
 
         int size_ack = makeAcknowledgement(pack.filename, pack.frag_no, ack);
         int bytes_sent = sendto(fd, ack, size_ack, 0, (struct sockaddr*)&sourceAddress, size);

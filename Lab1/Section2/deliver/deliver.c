@@ -92,18 +92,10 @@ int main(int argc, char *argv[]) {
                         f_size = size % ((totalFrag - 1) * 1000);
                     else f_size = 1000;
 
-                    printf("BLUE\n");
-
                     char buffer[f_size];
-
-                      printf("Yellow\n");
-
-                      printf("fsize: %d, totalFrag: %d\n", f_size, totalFrag);
-
 
                     int o = fread(buffer, sizeof(char), f_size, fptr);
 
-                                          printf("Green\n");
 
                     if (!o){
                         perror("fread");
@@ -112,18 +104,14 @@ int main(int argc, char *argv[]) {
                     struct packet f_packet = dataToPacket(totalFrag, f_no, f_size, filename, buffer);
                     char message[BUFFERSIZE];
                     int check = makeMessage(&f_packet, message);
-                    
-                    printf("B\n");
 
                     if (f_no == 1) gettimeofday(&start, NULL);
-                                        printf("C\n");
 
                     if (sendto(socketfd, (const void *) &message, BUFFERSIZE, 0, (const struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
                         perror("sendto");
                         close(socketfd);
                         exit(EXIT_FAILURE);
                     }
-                                        printf("D\n");
 
                     // receiving the acknowledgement 
                     char buf[BUFFERSIZE];
@@ -131,7 +119,6 @@ int main(int argc, char *argv[]) {
                     socklen_t addr_len = sizeof(src_addr);
                     
                     int bytes_recv = recvfrom(socketfd, (void *)&buf, sizeof(buf), 0, (struct sockaddr*)&src_addr, &addr_len);
-                                        printf("E\n");
 
                     if ( bytes_recv < 0) {
                         perror("recvfrom");
@@ -141,10 +128,8 @@ int main(int argc, char *argv[]) {
                     if (f_no == totalFrag) gettimeofday(&end, NULL);
 
                     buf[bytes_recv] = '\0';
-                                        printf("F\n");
 
                     puts(buf);
-                                        printf("G\n");
 
                 }
                 close(socketfd);

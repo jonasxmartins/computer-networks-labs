@@ -6,33 +6,29 @@
 
 struct packet makeStruct(char buffer[BUFFERSIZE], int num_bytes)
 {
-
     char* totalFrag = strtok(buffer, ":");
     char* fragNo = strtok(NULL, ":");
     char* size = strtok(NULL, ":");
     char* filename = strtok(NULL, ":");
-    char* filedata = strtok(NULL, "");
+    int start = strlen(totalFrag) + strlen(fragNo) + strlen(size) + strlen(filename) + 4;
+    char* filedata = buffer + start;
 
     struct packet pack;
-
     pack.total_frag = atoi(totalFrag);
     pack.frag_no = atoi(fragNo);
     pack.size = atoi(size);
     pack.filename = filename;
     memcpy(pack.filedata, filedata, pack.size);
-
     return pack;
 }
 
 int makeMessage(struct packet *pack,  char message[BUFFERSIZE])
 {
 
-    printf("makemessage\n");
     int check = snprintf(message, BUFFERSIZE, "%u:%u:%u:%s:%s", 
                 pack->total_frag, pack->frag_no, pack->size, 
                 pack->filename, pack->filedata);
 
-        printf("makemessage2\n");
 
     if (check <= 0) 
     {

@@ -95,6 +95,7 @@ int main(int argc, char *argv[]){
         exit(89);
     }
 
+    struct packet pack = 
 
 
     // sends answer back
