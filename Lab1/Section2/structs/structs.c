@@ -6,13 +6,12 @@
 
 struct packet makeStruct(char buffer[BUFFERSIZE], int num_bytes)
 {
-    buffer[num_bytes] = '\0';
 
     char* totalFrag = strtok(buffer, ":");
     char* fragNo = strtok(NULL, ":");
     char* size = strtok(NULL, ":");
     char* filename = strtok(NULL, ":");
-    char* filedata = strtok(NULL, ":");
+    char* filedata = strtok(NULL, "");
 
     struct packet pack;
 
@@ -20,7 +19,7 @@ struct packet makeStruct(char buffer[BUFFERSIZE], int num_bytes)
     pack.frag_no = atoi(fragNo);
     pack.size = atoi(size);
     pack.filename = filename;
-    strncpy(pack.filedata, filedata, 1000);
+    memcpy(pack.filedata, filedata, pack.size);
 
     return pack;
 }
