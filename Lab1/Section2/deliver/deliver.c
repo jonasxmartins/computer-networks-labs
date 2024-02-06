@@ -123,6 +123,13 @@ int main(int argc, char *argv[]) {
                     }
                     if (f_no == totalFrag) gettimeofday(&end, NULL);
 
+                    double seconds = difftime(end.tv_sec, start.tv_sec);
+
+    
+                    long int microseconds = (long int)(seconds*SECONDS_IN_MICRO + end.tv_usec - start.tv_usec);
+
+                    printf("%li microseconds passed.\n", microseconds); 
+
                     buf[bytes_recv] = '\0';
 
                     puts(buf); // prints acknowledgement
@@ -150,12 +157,7 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    double seconds = difftime(end.tv_sec, start.tv_sec);
 
-    
-    long int microseconds = (long int)(seconds*SECONDS_IN_MICRO + end.tv_usec - start.tv_usec);
-
-    //printf("%li microseconds passed.\n", microseconds); 
 
 
     return EXIT_SUCCESS;
