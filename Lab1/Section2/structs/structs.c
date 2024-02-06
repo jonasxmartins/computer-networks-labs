@@ -29,7 +29,6 @@ int makeMessage(struct packet *pack,  char message[BUFFERSIZE])
                 pack->total_frag, pack->frag_no, pack->size, 
                 pack->filename);
 
-    puts(message);
     memcpy(message+check, pack->filedata, pack->size);
     if (check <= 0) 
     {
