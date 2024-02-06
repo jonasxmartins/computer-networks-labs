@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
                     if (totalFrag == 1)
                         f_size = size;
                     else if (f_no == totalFrag)
-                        f_size = size % ((totalFrag - 1) * 1000);
+                        f_size = size % ((totalFrag) * 1000);
                     else f_size = 1000;
 
                     char buffer[f_size];
