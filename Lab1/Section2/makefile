@@ -2,19 +2,15 @@ CC=gcc
 CFLAGS=-I.
 
 # The all target
-all: server deliver structs
+all: server deliver
 
 # Compile the server program
-server: server/server.o
-	$(CC) -o server/server server/server.o
+server: server/server.o structs/structs.o
+	$(CC) -o server/server server/server.o structs/structs.o
 
 # Compile the deliver program
-deliver: deliver/deliver.o
-	$(CC) -o deliver/deliver deliver/deliver.o
-
-# Compile the deliver program
-structs: structs/structs.o
-	$(CC) -o deliver/deliver deliver/deliver.o
+deliver: deliver/deliver.o structs/structs.o
+	$(CC) -o deliver/deliver deliver/deliver.o structs/structs.o
 
 # Pattern rule for compiling .c to .o
 server/%.o: server/%.c
@@ -28,4 +24,4 @@ structs/%.o: structs/%.c
 
 # Clean the build
 clean:
-	rm -f server/*.o deliver/*.o structs/*.o server/server deliver/deliver structs/structs
+	rm -f server/*.o deliver/*.o structs/*.o server/server deliver/deliver
