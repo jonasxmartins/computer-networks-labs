@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
                     unsigned int f_size;
                     if (totalFrag == 1)
                         f_size = size;
-                    else if (f_no = totalFrag)
+                    else if (f_no == totalFrag)
                         f_size = size % ((totalFrag - 1) * 1000);
                     else f_size = 1000;
 
@@ -97,9 +97,9 @@ int main(int argc, char *argv[]) {
                     char message[BUFFERSIZE];
                     int check = makeMessage(&f_packet, message);
                     
-                    if (f_no = 1) gettimeofday(&start, NULL);
+                    if (f_no == 1) gettimeofday(&start, NULL);
 
-                    if (sendto(socketfd, (const void *) &message, sizeof(message), 0, (const struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
+                    if (sendto(socketfd, (const void *) &message, BUFFERSIZE, 0, (const struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
                         perror("sendto");
                         close(socketfd);
                         exit(EXIT_FAILURE);
@@ -164,8 +164,8 @@ struct packet dataToPacket(const unsigned int totalFrag,
     packet.total_frag = totalFrag;
     packet.frag_no = f_no;
     packet.size = (unsigned int) size;
-    packet.filename = *filename;
-    memcpy(packet.filedata, buffer, sizeof(buffer));
+    packet.filename = filename;
+    memcpy(packet.filedata, buffer, size);
 
     return packet;
 }
