@@ -26,9 +26,14 @@ struct packet makeStruct(char buffer[BUFFERSIZE], int num_bytes)
 
 int makeMessage(struct packet *pack,  char message[BUFFERSIZE])
 {
+
+    printf("makemessage\n");
     int check = snprintf(message, BUFFERSIZE, "%u:%u:%u:%s:%s", 
                 pack->total_frag, pack->frag_no, pack->size, 
                 pack->filename, pack->filedata);
+
+        printf("makemessage2\n");
+
     if (check <= 0) 
     {
         perror("make message");

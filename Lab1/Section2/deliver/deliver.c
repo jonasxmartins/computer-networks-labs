@@ -42,6 +42,9 @@ int main(int argc, char *argv[]) {
     char* command = strtok(input, " "); // stores command based on user input
     char* filename = strtok(NULL, " "); // stores filename based on user input
 
+
+    printf("%s\n", filename);
+
     struct sockaddr_in server_addr;
     memset(&server_addr, 0, sizeof(server_addr));
 
@@ -77,6 +80,8 @@ int main(int argc, char *argv[]) {
                         not optimal for speed, but I can implement non-blocking recv
                         or change it to before sendto so the struct is made before
                         waiting for recv, a lot of options available */
+                
+
                 for (int f_no = 1; f_no <= totalFrag; f_no++){
 
                     // gets the size of the data in the fragment
@@ -87,8 +92,19 @@ int main(int argc, char *argv[]) {
                         f_size = size % ((totalFrag - 1) * 1000);
                     else f_size = 1000;
 
+                    printf("BLUE\n");
+
                     char buffer[f_size];
+
+                      printf("Yellow\n");
+
+                      printf("fsize: %d, totalFrag: %d\n", f_size, totalFrag);
+
+
                     int o = fread(buffer, sizeof(char), f_size, fptr);
+
+                                          printf("Green\n");
+
                     if (!o){
                         perror("fread");
                         exit(88);
@@ -97,19 +113,26 @@ int main(int argc, char *argv[]) {
                     char message[BUFFERSIZE];
                     int check = makeMessage(&f_packet, message);
                     
+                    printf("B\n");
+
                     if (f_no == 1) gettimeofday(&start, NULL);
+                                        printf("C\n");
 
                     if (sendto(socketfd, (const void *) &message, BUFFERSIZE, 0, (const struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
                         perror("sendto");
                         close(socketfd);
                         exit(EXIT_FAILURE);
                     }
+                                        printf("D\n");
+
                     // receiving the acknowledgement 
                     char buf[BUFFERSIZE];
                     struct sockaddr_storage src_addr;
                     socklen_t addr_len = sizeof(src_addr);
                     
                     int bytes_recv = recvfrom(socketfd, (void *)&buf, sizeof(buf), 0, (struct sockaddr*)&src_addr, &addr_len);
+                                        printf("E\n");
+
                     if ( bytes_recv < 0) {
                         perror("recvfrom");
                         close(socketfd);
@@ -118,7 +141,11 @@ int main(int argc, char *argv[]) {
                     if (f_no == totalFrag) gettimeofday(&end, NULL);
 
                     buf[bytes_recv] = '\0';
+                                        printf("F\n");
+
                     puts(buf);
+                                        printf("G\n");
+
                 }
                 close(socketfd);
             } 
@@ -165,8 +192,11 @@ struct packet dataToPacket(const unsigned int totalFrag,
     packet.frag_no = f_no;
     packet.size = (unsigned int) size;
     packet.filename = filename;
+    printf("1\n");
 
     memcpy(packet.filedata, buffer, size);
+        printf("2\n");
+
     return packet;
 }
 
