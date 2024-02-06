@@ -98,7 +98,7 @@ int main(int argc, char *argv[]) {
                     }
                     struct packet f_packet = dataToPacket(totalFrag, f_no, f_size, filename, buffer);
                     char message[BUFFERSIZE];
-                    int check = (&f_packet, message);
+                    int check = makeMessage(&f_packet, message);
 
                     if (f_no == 1) gettimeofday(&start, NULL);
 
