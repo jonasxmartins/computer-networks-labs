@@ -77,7 +77,7 @@ int main(int argc, char *argv[]) {
                         not optimal for speed, but I can implement non-blocking recv
                         or change it to before sendto so the struct is made before
                         waiting for recv, a lot of options available */
-                printf("File size = %d\n%d fragments\n", size, totalFrag);
+                // printf("File size = %d\n%d fragments\n", size, totalFrag);
                 for (int f_no = 1; f_no <= totalFrag; f_no++){
                     
                     // gets the size of the data in the fragment
@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
                         f_size = size % ((totalFrag - 1) * 1000);
                     else f_size = 1000;
 
-                    printf("Fragment Size = %d\n", f_size);
+                    //printf("Fragment Size = %d\n", f_size);
 
                     char buffer[f_size];
                     int o = fread(buffer, sizeof(char), f_size, fptr);
@@ -124,6 +124,8 @@ int main(int argc, char *argv[]) {
                     if (f_no == totalFrag) gettimeofday(&end, NULL);
 
                     buf[bytes_recv] = '\0';
+
+                    puts(buf); // prints acknowledgement
 
 
                 }
