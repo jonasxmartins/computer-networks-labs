@@ -164,7 +164,7 @@ struct packet dataToPacket(const unsigned int totalFrag,
     packet.total_frag = totalFrag;
     packet.frag_no = f_no;
     packet.size = (unsigned int) size;
-    packet.filename = *filename;
+    packet.filename = filename;
     memcpy(packet.filedata, buffer, sizeof(buffer));
 
     return packet;
