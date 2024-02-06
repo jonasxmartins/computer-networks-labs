@@ -43,8 +43,6 @@ int main(int argc, char *argv[]) {
     char* filename = strtok(NULL, " "); // stores filename based on user input
 
 
-    printf("%s\n", filename);
-
     struct sockaddr_in server_addr;
     memset(&server_addr, 0, sizeof(server_addr));
 
@@ -72,31 +70,28 @@ int main(int argc, char *argv[]) {
                 FILE *fptr;
                 fptr = fopen(filename, "rb");
                 size_t size = fsize(fptr);
-                const unsigned int totalFrag = (const unsigned int) ceil(size / 1000);
-
+                const unsigned int totalFrag = (const unsigned int) ceil((double)size / 1000.00);
                 /*  this is the loop where the fragments are sent out:
                         right now each fragment is created on the spot as the file
                         data is being read, meaning it is very memory efficient but
                         not optimal for speed, but I can implement non-blocking recv
                         or change it to before sendto so the struct is made before
                         waiting for recv, a lot of options available */
-                
-
+                printf("File size = %d\n%d fragments\n", size, totalFrag);
                 for (int f_no = 1; f_no <= totalFrag; f_no++){
-
+                    
                     // gets the size of the data in the fragment
                     unsigned int f_size;
                     if (totalFrag == 1)
                         f_size = size;
-                    else if (f_no == totalFrag)
-                        f_size = size % ((totalFrag) * 1000);
+                    else if (f_no == totalFrag && (size % 1000) != 0)
+                        f_size = size % ((totalFrag - 1) * 1000);
                     else f_size = 1000;
 
+                    printf("Fragment Size = %d\n", f_size);
+
                     char buffer[f_size];
-
                     int o = fread(buffer, sizeof(char), f_size, fptr);
-
-
                     if (!o){
                         perror("fread");
                         exit(88);
@@ -112,6 +107,7 @@ int main(int argc, char *argv[]) {
                         close(socketfd);
                         exit(EXIT_FAILURE);
                     }
+
 
                     // receiving the acknowledgement 
                     char buf[BUFFERSIZE];
@@ -129,7 +125,6 @@ int main(int argc, char *argv[]) {
 
                     buf[bytes_recv] = '\0';
 
-                    puts(buf);
 
                 }
                 close(socketfd);
@@ -177,11 +172,8 @@ struct packet dataToPacket(const unsigned int totalFrag,
     packet.frag_no = f_no;
     packet.size = (unsigned int) size;
     packet.filename = filename;
-    printf("1\n");
 
     memcpy(packet.filedata, buffer, size);
-        printf("2\n");
-
     return packet;
 }
 
