@@ -79,6 +79,8 @@ int main(int argc, char *argv[]){
 
 // should work until here
 
+    printf("Server is running and waiting\n");
+
     // wait to receive information from opened socket
     int bytes_received = recvfrom(fd, buffer, BUFFERSIZE, 0, (struct sockaddr*)&sourceAddress, &size);
     if (bytes_received == -1)
