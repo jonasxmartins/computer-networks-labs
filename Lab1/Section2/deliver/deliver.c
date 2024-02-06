@@ -123,12 +123,12 @@ int main(int argc, char *argv[]) {
                     }
                     if (f_no == totalFrag) gettimeofday(&end, NULL);
 
-                    double seconds = difftime(end.tv_sec, start.tv_sec);
+                    //double seconds = difftime(end.tv_sec, start.tv_sec);
 
     
-                    long int microseconds = (long int)(seconds*SECONDS_IN_MICRO + end.tv_usec - start.tv_usec);
+                    //long int microseconds = (long int)(seconds*SECONDS_IN_MICRO + end.tv_usec - start.tv_usec);
 
-                    printf("%li microseconds passed.\n", microseconds); 
+                    //printf("%li microseconds passed.\n", microseconds); 
 
                     buf[bytes_recv] = '\0';
 
