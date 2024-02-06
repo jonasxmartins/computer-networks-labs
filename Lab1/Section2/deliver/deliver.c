@@ -128,7 +128,7 @@ int main(int argc, char *argv[]) {
     
                     long int microseconds = (long int)(seconds*SECONDS_IN_MICRO + end.tv_usec - start.tv_usec);
 
-                    printf("%li microseconds passed.\n", microseconds); 
+                    //printf("%li microseconds passed.\n", microseconds); 
 
                     buf[bytes_recv] = '\0';
 
