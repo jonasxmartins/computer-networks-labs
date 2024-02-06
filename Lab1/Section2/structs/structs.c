@@ -25,17 +25,18 @@ struct packet makeStruct(char buffer[BUFFERSIZE], int num_bytes)
 int makeMessage(struct packet *pack,  char message[BUFFERSIZE])
 {
 
-    int check = snprintf(message, BUFFERSIZE, "%u:%u:%u:%s:%s", 
+    int check = snprintf(message, BUFFERSIZE, "%u:%u:%u:%s:", 
                 pack->total_frag, pack->frag_no, pack->size, 
-                pack->filename, pack->filedata);
+                pack->filename);
 
-
+    puts(message);
+    memcpy(message+check, pack->filedata, pack->size);
     if (check <= 0) 
     {
         perror("make message");
         exit(888);
     }
-    return check;
+    return 1;
 }
 
 struct ack acknowledgeToPacket(char buffer[BUFFERSIZE], int num_bytes)

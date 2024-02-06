@@ -93,6 +93,8 @@ int main(int argc, char *argv[]){
     packetList[0] = pack;
 
     unsigned int number_of_fragments = pack.total_frag;
+    char filename[300]; 
+    strcpy(filename, pack.filename);
 
     // send acknowledgement back
     char ack[BUFFERSIZE];
@@ -105,16 +107,16 @@ int main(int argc, char *argv[]){
     }
 printf("This amount of fragments: %u\n", number_of_fragments);
 
+
     // create list of packets
     for (int i = 1; i < number_of_fragments; i++)
     {
-        int bytes_received = recvfrom(fd, buffer, BUFFERSIZE, 0, (struct sockaddr*)&sourceAddress, &size);
+        int bytes_received = recvfrom(fd, (void*)buffer, BUFFERSIZE, 0, (struct sockaddr*)&sourceAddress, &size);
         if (bytes_received == -1)
         {
             perror("receive");
             exit(89);
         }
-
         pack = makeStruct(buffer, bytes_received);
         packetList[i] = pack;
 
@@ -138,20 +140,25 @@ printf("This amount of fragments: %u\n", number_of_fragments);
     }
     else
     {
-        data_size = (number_of_fragments - 1)*1000 +  packetList[number_of_fragments - 1].size;
+        data_size = (number_of_fragments-1)*1000 +  packetList[number_of_fragments-1].size;
         data = (char*)malloc(data_size);
     }
 
-    packetsToData(packetList, data);
+    printf("The size of the file is %d bytes\n", data_size);
 
+    packetsToData(packetList, data);
     FILE *out;
 
-    out = fopen(packetList[0].filename, "w");
+    printf("Opening file: %s\n", filename);
+
+
+    out = fopen(filename, "wb");
     if (out == NULL)
     {
         perror("file open");
         exit(77);
     }
+    
     
     fwrite(data, data_size, 1, out);
 
@@ -162,8 +169,6 @@ printf("This amount of fragments: %u\n", number_of_fragments);
     free(packetList);
     free(data);
 
-    
-
     return 0;
 }
 
@@ -173,16 +178,10 @@ int packetsToData(struct packet *packetList, char *data)
 
     for (int i = 0; i < frag_no - 1; i++)
     {
-        for (int j = 0; j < 1000; j++)
-        {
-            data[j + 1000*i] = packetList[i].filedata[j];
-        }
+        memcpy(data + i*1000, packetList[i].filedata, 1000);
     }
 
-    for (int j = 0; j < 1000; j++)
-    {
-        data[j + 1000*(frag_no - 1)] = packetList[frag_no - 1].filedata[j];
-    }
+    memcpy(data + (frag_no -1)*1000, packetList[frag_no - 1].filedata, packetList[frag_no-1].size);
 
     return frag_no;
 }

@@ -9,8 +9,8 @@ server: server/server.o structs/structs.o
 	$(CC) -o server/server server/server.o structs/structs.o
 
 # Compile the deliver program
-deliver: deliver/deliver.o structs/structs.o
-	$(CC) -o deliver/deliver deliver/deliver.o structs/structs.o
+deliver: deliver/deliver.o structs/structs.o 
+	$(CC) -o deliver/deliver deliver/deliver.o structs/structs.o -lm
 
 # Pattern rule for compiling .c to .o
 server/%.o: server/%.c
