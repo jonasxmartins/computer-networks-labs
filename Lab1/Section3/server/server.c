@@ -5,12 +5,14 @@
 #include <netdb.h>
 #include <sys/socket.h>
 #include "structs/structs.h"
+#include <stdbool.h>
 
 /* This code was made with the help of Beej's Guide to Network Programming,
    especially section 5.1 - 5.8 and 6.3
    This resource can be found at https://beej.us/guide/bgnet/html/#getaddrinfoprepare-to-launch */
 
 int packetsToData(struct packet *packetList, char *data);
+bool acknowledge();
 
 int main(int argc, char *argv[]){
     
@@ -109,10 +111,11 @@ int main(int argc, char *argv[]){
     }
 printf("This amount of fragments: %u\n", number_of_fragments);
 
-
+    printf("bad bunny\n");
     // create list of packets
-    for (int i = 1; i < number_of_fragments; i++)
+    while (pack.frag_no <= number_of_fragments)
     {
+        printf("went here\n");
         int bytes_received = recvfrom(fd, (void*)buffer, BUFFERSIZE, 0, (struct sockaddr*)&sourceAddress, &size);
         if (bytes_received == -1)
         {
@@ -120,15 +123,21 @@ printf("This amount of fragments: %u\n", number_of_fragments);
             exit(89);
         }
         pack = makeStruct(buffer, bytes_received);
-        packetList[i] = pack;
-
-
-        int size_ack = makeAcknowledgement(pack.filename, pack.frag_no, ack);
-        int bytes_sent = sendto(fd, ack, size_ack, 0, (struct sockaddr*)&sourceAddress, size);
-        if (bytes_sent == -1)
+        packetList[pack.frag_no - 1] = pack;
+        printf("received %d packet\n", pack.frag_no);
+        if (acknowledge())
         {
-            perror("send acknowledge");
-            exit(89);
+            int size_ack = makeAcknowledgement(pack.filename, pack.frag_no, ack);
+            int bytes_sent = sendto(fd, ack, size_ack, 0, (struct sockaddr*)&sourceAddress, size);
+            if (bytes_sent == -1)
+            {
+                perror("send acknowledge");
+                exit(89);
+            }
+        }
+        else
+        {
+            printf("packet number %u dropped\n", pack.frag_no);
         }
     }
 
@@ -188,3 +197,18 @@ int packetsToData(struct packet *packetList, char *data)
     return frag_no;
 }
 
+bool acknowledge()
+{
+    int random = rand()%100;
+    if (random >= 50) 
+    {
+        printf("random is true %d\n", random);
+        return true;
+    }
+    else
+    {
+        printf("random is false %d\n", random);
+        return false;
+    }
+     
+}
