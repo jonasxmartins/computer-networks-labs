@@ -90,6 +90,7 @@ int main(int argc, char *argv[]) {
                 clock_t before;
                 float all_rtts[100]; // all the RTTs so far, used for calculating time out
                 int n_rtts = 0; // number of RTTs so far, useful for indexing in time out calculation
+  
 
                 for (int f_no = 1; f_no <= totalFrag; f_no++){
                     
@@ -101,6 +102,7 @@ int main(int argc, char *argv[]) {
                         f_size = size % ((totalFrag - 1) * 1000);
                     else f_size = 1000;
 
+
                     //printf("Fragment Size = %d\n", f_size);
 
                     char buffer[f_size];
@@ -109,27 +111,32 @@ int main(int argc, char *argv[]) {
                         perror("fread");
                         exit(88);
                     }
+
+
                     struct packet f_packet = dataToPacket(totalFrag, f_no, f_size, filename, buffer);
                     char message[BUFFERSIZE];
                     int check = makeMessage(&f_packet, message);
 
-                    if (f_no == 1) gettimeofday(&start, NULL);
+
+                    //if (f_no == 1) gettimeofday(&start, NULL);
                     send_again:
                     if (sendto(socketfd, (const void *) &message, BUFFERSIZE, 0, (const struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
                         perror("sendto");
                         close(socketfd);
                         exit(EXIT_FAILURE);
                     }
+
                     before = clock();
 
                     // receiving the acknowledgement 
                     char buf[BUFFERSIZE];
+
                     struct sockaddr_storage src_addr;
                     socklen_t addr_len = sizeof(src_addr);
-                    
+
                     int bytes_recv = recvfrom(socketfd, (void *)&buf, sizeof(buf), MSG_DONTWAIT, (struct sockaddr*)&src_addr, &addr_len);
 
-                    while ( bytes_recv < 0) {
+                    while (!bytes_recv) {
                         difference = (clock() - before) / (float)CLOCKS_PER_SEC;
 
                         if (difference > timeout_val){
@@ -137,11 +144,13 @@ int main(int argc, char *argv[]) {
                             goto send_again;
                         }
                     }
+
                     all_rtts[n_rtts] = difference;
+
                     n_rtts++;
                     recalc_timeout(&timeout_val, &difference, all_rtts, &n_rtts);
 
-                    if (f_no == totalFrag) gettimeofday(&end, NULL);
+                    //if (f_no == totalFrag) gettimeofday(&end, NULL);
 
                     //double seconds = difftime(end.tv_sec, start.tv_sec);
 
