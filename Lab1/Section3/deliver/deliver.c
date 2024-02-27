@@ -12,6 +12,7 @@
 #include <time.h>
 #include "structs/structs.h"
 #include <math.h>
+#include <stdbool.h>
 
 #define SECONDS_IN_MICRO 1000000
 // RTT is 617 microseconds
@@ -68,6 +69,7 @@ int main(int argc, char *argv[]) {
             int exist = stat(filename, &buffer);
             if (exist == 0) 
             {   
+                printf("\n*****INITIATING TRANSMISSION*****\n\n");
                 // opens file and calls function to know size of file and how many fragments
                 FILE *fptr;
                 fptr = fopen(filename, "rb");
@@ -81,8 +83,6 @@ int main(int argc, char *argv[]) {
                         or change it to before sendto so the struct is made before
                         waiting for recv, a lot of options available */
 
-                // printf("File size = %d\n%d fragments\n", size, totalFrag);
-
                 // value of timeout and current RTT value, represented by difference
                 float timeout_val, difference;
                 timeout_val = 5.0; // intial value is 5 seconds
@@ -90,42 +90,41 @@ int main(int argc, char *argv[]) {
                 clock_t before;
                 float all_rtts[100]; // all the RTTs so far, used for calculating time out
                 int n_rtts = 0; // number of RTTs so far, useful for indexing in time out calculation
-  
 
-                for (int f_no = 1; f_no <= totalFrag; f_no++){
-                    
-                    // gets the size of the data in the fragment
+                int acknowledged = 0;
+                bool retransmitting = false;
+                char message[BUFFERSIZE];
+                while(acknowledged < totalFrag)
+                {
                     unsigned int f_size;
                     if (totalFrag == 1)
                         f_size = size;
-                    else if (f_no == totalFrag && (size % 1000) != 0)
+                    else if (acknowledged + 1 == totalFrag && (size % 1000) != 0)
                         f_size = size % ((totalFrag - 1) * 1000);
                     else f_size = 1000;
-
-
-                    //printf("Fragment Size = %d\n", f_size);
-
-                    char buffer[f_size];
-                    int o = fread(buffer, sizeof(char), f_size, fptr);
-                    if (!o){
-                        perror("fread");
-                        exit(88);
+                        
+                    if (!retransmitting)
+                    {    // gets the size of the data in the fragment
+                        char buffer[f_size];
+                        int o = fread(buffer, sizeof(char), f_size, fptr);
+                        if (!o){
+                            perror("fread");
+                            exit(88);
+                        }
+                        
+                        struct packet f_packet = dataToPacket(totalFrag, acknowledged + 1, f_size, filename, buffer);
+                        
+                        int check = makeMessage(&f_packet, message);
                     }
-
-
-                    struct packet f_packet = dataToPacket(totalFrag, f_no, f_size, filename, buffer);
-                    char message[BUFFERSIZE];
-                    int check = makeMessage(&f_packet, message);
-
-
-                    //if (f_no == 1) gettimeofday(&start, NULL);
-                    send_again:
+                    
+                    float extra = 0;
+                    
                     if (sendto(socketfd, (const void *) &message, BUFFERSIZE, 0, (const struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
                         perror("sendto");
                         close(socketfd);
                         exit(EXIT_FAILURE);
                     }
-
+                    
                     before = clock();
 
                     // receiving the acknowledgement 
@@ -134,33 +133,39 @@ int main(int argc, char *argv[]) {
                     struct sockaddr_storage src_addr;
                     socklen_t addr_len = sizeof(src_addr);
 
-                    int bytes_recv = recvfrom(socketfd, (void *)&buf, sizeof(buf), MSG_DONTWAIT, (struct sockaddr*)&src_addr, &addr_len);
-
-                    while (!bytes_recv) {
+                    int bytes_recv = -1;
+                    
+                    while (bytes_recv == -1) 
+                    {
+                        bytes_recv = recvfrom(socketfd, (void *)&buf, sizeof(buf), MSG_DONTWAIT, (struct sockaddr*)&src_addr, &addr_len);
                         difference = (clock() - before) / (float)CLOCKS_PER_SEC;
-
                         if (difference > timeout_val){
-                            printf("\nRetransmitting packet number: %n\n", f_packet.frag_no);
-                            goto send_again;
+                            printf("\nRetransmitting packet number: %d\n\n", acknowledged+1);
+                            retransmitting = true;
+                            break;
                         }
                     }
+                    printf("timeout is %f\n", timeout_val);
+                    if (bytes_recv != -1)
+                    {
+                        all_rtts[n_rtts] = difference + extra;
+                        extra = 0;
+                        n_rtts++;
+                        recalc_timeout(&timeout_val, &difference, all_rtts, &n_rtts);
+                        struct ack acknowledgement = acknowledgeToPacket(buf, bytes_recv);
+                        printf("Received acknowledgement for packet number %d\n", acknowledgement.frag_no);
+                        acknowledged++;
+                        retransmitting = false;
+                    }
+                    else
+                    {
+                        extra += timeout_val;
+                    }
 
-                    all_rtts[n_rtts] = difference;
-
-                    n_rtts++;
-                    recalc_timeout(&timeout_val, &difference, all_rtts, &n_rtts);
-
-                    //if (f_no == totalFrag) gettimeofday(&end, NULL);
-
-                    //double seconds = difftime(end.tv_sec, start.tv_sec);
-
-                    //long int microseconds = (long int)(seconds*SECONDS_IN_MICRO + end.tv_usec - start.tv_usec);
-
-                    //printf("%li microseconds passed.\n", microseconds); 
 
                     buf[bytes_recv] = '\0';
 
-                    puts(buf); // prints acknowledgement
+
 
 
                 }

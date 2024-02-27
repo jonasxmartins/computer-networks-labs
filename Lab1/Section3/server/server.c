@@ -95,7 +95,7 @@ int main(int argc, char *argv[]){
     struct packet pack = makeStruct(buffer, bytes_received);
     struct packet *packetList = (struct packet*)malloc(pack.total_frag*sizeof(struct packet));
     packetList[0] = pack;
-
+    
     unsigned int number_of_fragments = pack.total_frag;
     char filename[300]; 
     strcpy(filename, pack.filename);
@@ -109,13 +109,12 @@ int main(int argc, char *argv[]){
         perror("send acknowledge");
         exit(89);
     }
-printf("This amount of fragments: %u\n", number_of_fragments);
+printf("Receiving %u fragments\n\n", number_of_fragments);
+printf("received packet number 1 of %d\n", number_of_fragments);
 
-    printf("bad bunny\n");
     // create list of packets
-    while (pack.frag_no <= number_of_fragments)
+    while (pack.frag_no < number_of_fragments)
     {
-        printf("went here\n");
         int bytes_received = recvfrom(fd, (void*)buffer, BUFFERSIZE, 0, (struct sockaddr*)&sourceAddress, &size);
         if (bytes_received == -1)
         {
@@ -124,10 +123,11 @@ printf("This amount of fragments: %u\n", number_of_fragments);
         }
         pack = makeStruct(buffer, bytes_received);
         packetList[pack.frag_no - 1] = pack;
-        printf("received %d packet\n", pack.frag_no);
+        printf("received packet number %d\n of %d\n", pack.frag_no, number_of_fragments);
         if (acknowledge())
         {
             int size_ack = makeAcknowledgement(pack.filename, pack.frag_no, ack);
+
             int bytes_sent = sendto(fd, ack, size_ack, 0, (struct sockaddr*)&sourceAddress, size);
             if (bytes_sent == -1)
             {
@@ -202,12 +202,12 @@ bool acknowledge()
     int random = rand()%100;
     if (random >= 50) 
     {
-        printf("random is true %d\n", random);
+        //printf("random is true %d\n", random);
         return true;
     }
     else
     {
-        printf("random is false %d\n", random);
+        //printf("random is false %d\n", random);
         return false;
     }
      

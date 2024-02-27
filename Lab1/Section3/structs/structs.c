@@ -42,8 +42,8 @@ struct ack acknowledgeToPacket(char buffer[BUFFERSIZE], int num_bytes)
 {
     buffer[num_bytes] = '\0';
 
-    char* fragNo = strtok(buffer, ":");
-    char* filename = strtok(NULL, ":");
+    char* filename = strtok(buffer, ":");
+    char* fragNo = strtok(NULL, ":");
 
     struct ack pack;
 
