@@ -1,5 +1,6 @@
 CC=gcc
 CFLAGS=-I.
+LDFLAGS=-pthread
 
 # The all target
 all: server client
