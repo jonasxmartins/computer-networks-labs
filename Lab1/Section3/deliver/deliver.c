@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
                 timeout_val = 5.0; // intial value is 5 seconds
 
                 clock_t before;
-                float all_rtts[100]; // all the RTTs so far, used for calculating time out
+                float all_rtts[10000]; // all the RTTs so far, used for calculating time out
                 int n_rtts = 0; // number of RTTs so far, useful for indexing in time out calculation
 
                 int acknowledged = 0;
