@@ -17,6 +17,14 @@ void *user_thread(void *arg);
 
 void nack_join(struct Packet pack);
 void ack_query(struct Packet pack);
+int command_encoder(char* command);
+void request_command(int command);
+void create_or_join_session(char *buffer, int command);
+void send_message(char *buffer);
+
+//Global variables
+bool in_session = false;
+char* client_id;
 
 int fd;
 
@@ -28,7 +36,6 @@ int main(void)
 
 void *log_in(void *arg)
 {
-    int fd;
     int error;
     struct addrinfo info, *serverInfo, *final;
     char buffer[BUFFERSIZE];
@@ -38,7 +45,7 @@ void *log_in(void *arg)
 
     buffer[strcspn(buffer, "\n")] = '\0';
     char* command = strtok(buffer, " ");
-    char* client_id = strtok(NULL, " ");
+    client_id = strtok(NULL, " ");
     char* password = strtok(NULL, " ");
     char* server_IP = strtok(NULL, " ");
     char* server_port = strtok(NULL, " ");
@@ -89,14 +96,15 @@ void *log_in(void *arg)
     {
         //send login info
         char message[BUFFERSIZE];
-        struct Packet pack = make_packet(1, strlen(password), client_id, password);
+        struct Packet pack = make_packet(LOGIN, strlen(password), client_id, password);
         packet_to_message(pack, message);
+
         if (!send(fd, message, strlen(message), 0))
         {
             perror("send login");
             exit(2);
         }
-
+        
         if (!recv(fd, buffer, BUFFERSIZE, 0))
         {
             perror("recv ack login");
@@ -153,7 +161,7 @@ void *server_thread(void *arg)
             }
             else
             {
-                perror("server thread");
+                perror("server thread recv");
                 exit(99);
             }
         }
@@ -166,12 +174,14 @@ void *server_thread(void *arg)
         {
         case 6:
             printf("Joined session %s succesfully\n", received.data);
+            in_session = 1;
             break;
         case 7:
             nack_join(received);
             break;
         case 10:
             printf("Created session %s succesfully\n", received.data);
+            in_session = 1;
             break;
         case 11:
             printf("%s says:\n%s\n", received.source, received.data);
@@ -180,7 +190,7 @@ void *server_thread(void *arg)
             ack_query(received);
             break;
         default:
-            printf("Unrecognized message from the server with code %d", received.type);
+            printf("Unrecognized message from the server with code %d\n", received.type);
             break;
         }  
     }
@@ -209,7 +219,140 @@ void ack_query(struct Packet pack)
     return;
 }
 
+
 void *user_thread(void *arg)
 {
+    bool connection_active = true;
+    
+    while (connection_active)
+    {
+        char buffer[BUFFERSIZE];
+
+        printf("Enter a command\n");
+
+        fgets(buffer, sizeof(buffer), stdin);
+        buffer[strcspn(buffer, "\n")] = '\0';
+
+        char *command = strtok(buffer, " ");
+          
+
+        int type = command_encoder(command);
+        if (type == 0)
+        {
+            continue;
+        }
+
+        switch (type)
+        {
+        case EXIT:
+        {
+            request_command(EXIT);
+            break;
+        }
+        case LEAVE_SESS:
+        {
+            request_command(LEAVE_SESS);
+            break;
+        }
+        case QUERY:
+        {
+            request_command(QUERY);
+            break;
+        }
+        case JOIN:
+        {
+            char *session = strtok(NULL, " ");
+            if (session == NULL) printf("Invalid session name\n");
+            else create_or_join_session(buffer, JOIN);
+            break;
+        }
+        case NEW_SESS:
+        {
+            char *session = strtok(NULL, " ");
+            if (session == NULL) printf("Invalid session name\n");
+            else create_or_join_session(buffer, NEW_SESS);
+            break;
+        }
+        case MESSAGE:
+        {
+            int sz = strlen(buffer);
+            buffer[sz] = ' ';
+            send_message(buffer);
+        }
+        default:
+            break;
+        }
+    }
+}
+
+int command_encoder(char* command)
+{
+    if (strcmp(command, "/login") == 0)
+    {
+        return LOGIN;
+    }
+    if (strcmp(command, "/exit") == 0) //logout
+    {
+        return EXIT;
+    }
+    if (strcmp(command, "/leave_sess") == 0) //leavesession
+    {
+        return LEAVE_SESS;
+    }
+    if (strcmp(command, "/join_sess") == 0) //joinsession
+    {
+        return JOIN;
+    }
+    if (strcmp(command, "/new_sess") == 0) //createsession
+    {
+        return NEW_SESS;
+    }
+    if (strcmp(command, "/query") == 0) //list
+    {
+        return QUERY;
+    }
+    if (in_session && command[0] != '/')
+    {
+        return MESSAGE;
+    }
+
+    printf("ERROR: Unknown command\n");
     return 0;
+
+}
+
+void request_command(int command)
+{
+    char message[BUFFERSIZE];
+    struct Packet pack = make_packet(command, 8, client_id, "command\n");
+    packet_to_message(pack, message);
+    if (!send(fd, message, strlen(message), 0))
+        {
+            perror("send request");
+            exit(2);
+        }
+}
+
+void create_or_join_session(char *buffer, int command)
+{
+    char message[BUFFERSIZE];
+    struct Packet pack = make_packet(command, strlen(buffer), client_id, buffer);
+    packet_to_message(pack, message);
+    if (!send(fd, message, strlen(message), 0))
+        {
+            perror("send session");
+            exit(2);
+        }
+}
+
+void send_message(char *buffer)
+{
+    char message[BUFFERSIZE];
+    struct Packet pack = make_packet(MESSAGE, strlen(buffer), client_id, buffer);
+    packet_to_message(pack, message);
+    if (!send(fd, message, strlen(message), 0))
+        {
+            perror("send message");
+            exit(2);
+        }
 }

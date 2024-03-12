@@ -9,29 +9,22 @@
 #include "structs/structs.h"
 #include <unistd.h>
 
-struct thread_args {
-    int new_sock;
-    unsigned int *n_sessions;
-    unsigned int *n_clients;
-    struct Client **client_list;
-    struct Session **session_list;
-};
 
+// key variables for server functionality
+unsigned int n_sessions = 0;
+unsigned int n_clients = 1;
+struct Session session_list[16];
+struct Client client_list[64];
+int current_sock = 0;
 
 void *client_handler(void *args) {
-    struct thread_args *threadArgs = (struct thread_args *)args;
 
-    int sock = threadArgs->new_sock;
-    unsigned int *n_sessions = threadArgs->n_sessions;
-    unsigned int *n_clients = threadArgs->n_clients;
-    struct Client **client_list = threadArgs->client_list;
-    struct Session **session_list = threadArgs->session_list; 
-
-    free(args); // Free the heap memory allocated for the socket descriptor
+    int sock = current_sock;
 
     char buffer[BUFFERSIZE];
     struct Packet login_packet;
     bool login_success = false;
+    struct Client *self;
 
     // Loop until login is successful
     while (!login_success) {
@@ -50,15 +43,62 @@ void *client_handler(void *args) {
         if (attempt_login(sock, login_packet, client_list, n_clients) >= 0) {
             printf("Login successful\n");
             login_success = true;
+            for (int i = 0; i < n_clients; i++) {
+                if (strcmp(login_packet.source, client_list[i].client_id) == 0){
+                    self = &client_list[i];
+                    break;
+                }
+    } 
         } else {
-            perror("Login failed");
+            printf("Login failed");
         }
     }
 
     // You can use a loop here to continuously read from the socket
     // and process commands from the client based on your protocol
     while(1){
-        // handles requests etc. 
+        memset(buffer, 0, BUFFERSIZE);
+        struct Packet req_packet, resp_packet;
+
+        ssize_t received_len = recv(sock, buffer, BUFFERSIZE - 1, 0);
+        if (received_len < 0) {
+            printf("Client not connected\n");
+            break;
+        } else if (received_len == 0) {
+            printf("Client disconnected\n");
+            break; 
+        }
+        req_packet = message_to_packet(buffer);
+        int req_type = req_packet.type;
+        switch(req_type) {
+            case LOGIN:
+            // already logged in
+                resp_packet.type = LO_ACK;
+                strcpy((char *)resp_packet.source, "SERVER");
+                strcpy((char *)resp_packet.data, "You are already logged in!.");
+                resp_packet.size = len(resp_packet.data);
+
+                char response_buffer[BUFFERSIZE];
+                memset(response_buffer, 0, BUFFERSIZE);
+
+                packet_to_message(resp_packet, response_buffer);
+                response_buffer[strlen(response_buffer)] = '\0';
+                if (send(sock, response_buffer, strlen(response_buffer), 0) < 0) {
+                    perror("send failed");
+                    return -1;
+                }
+            case EXIT:
+                self->connected = 0;
+                self->in_session = 0;    
+            case JOIN:
+                attempt_join(self, )
+            case LEAVE_SESS:
+            case NEW_SESS:
+            case MESSAGE:
+            case QUERY:
+            default:
+                continue;
+        }
     }
 
     close(sock);
@@ -93,14 +133,20 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    // key variables for server functionality
-    unsigned int n_sessions = 0;
-    unsigned int n_clients = 0;
-    struct Session *session_list[16];
-    struct Client *client_list[64];
+    struct Client mario;
+    strncpy(mario.client_id, "mario\0", 6);
+    strncpy(mario.password, "hello\0", 6);
+    mario.connected = 0;
+    mario.in_session = 0;
+    mario.socket_fd = 0;
+
+    client_list[0] = mario;
+
 
     listen(sockfd, 5);
     clilen = sizeof(cli_addr);
+
+    printf("Server is up and running\n");
 
     while (1) {
         newsockfd = accept(sockfd, (struct sockaddr *)&cli_addr, &clilen);
@@ -111,18 +157,9 @@ int main(int argc, char *argv[]) {
 
         // Create a new thread for this client
         pthread_t tid;
+        current_sock = newsockfd;
 
-        struct thread_args *args = malloc(sizeof(struct thread_args));
-        if (args == NULL) {
-            perror("ERROR allocating thread arguments");
-        }
-        args->new_sock = newsockfd;
-        args->client_list = client_list;
-        args->session_list = session_list;
-        args->n_clients = &n_clients;
-        args->n_sessions = &n_sessions;
-
-        if (pthread_create(&tid, NULL, client_handler, (void *)args) < 0) {
+        if (pthread_create(&tid, NULL, client_handler, 0) < 0) {
             perror("ERROR creating thread");
             close(newsockfd);
             continue;
