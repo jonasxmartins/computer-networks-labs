@@ -18,6 +18,13 @@
 #define QUERY 12
 #define QU_ACK 13
 
+// #define LOGIN_ACK 200
+// #define LOGIN_NAK 400
+// #define JOIN_ACK 202
+// #define JOIN_NAK 402
+// #define NEWSESSION_ACK 204
+// #define NS_ACK 
+
 #define CLIENT 69
 #define SERVER 420
 

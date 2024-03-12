@@ -6,6 +6,8 @@
 #include <sys/socket.h>
 #include <stdbool.h>
 #include <pthread.h>
+#include "structs.h"
+#define BUFFER_SIZE 2048
 
 struct thread_args {
     int new_sock;
@@ -17,13 +19,22 @@ struct thread_args {
 
 
 void *client_handler(void *args) {
-    int sock = *(int *)args[0];
-    unsigned int *n_sessions = args[1];
-    unsigned int *n_clients = args[2];
-    struct Client *client_list = args[3];
-    struct Session *session_list = (struct Session *) args[4];
-    
+    struct thread_args *threadArgs = (struct thread_args *)args;
+
+    int sock = threadArgs->new_sock;
+    unsigned int *n_sessions = threadArgs->n_sessions;
+    unsigned int *n_clients = threadArgs->n_clients;
+    struct Client *client_list = threadArgs->client_list;
+    struct Session *session_list = threadArgs->session_list; 
+
     free(args); // Free the heap memory allocated for the socket descriptor
+
+    char buffer[BUFFER_SIZE];
+    memset(buffer, 0, BUFFER_SIZE);
+    
+
+
+
 
     // You can use a loop here to continuously read from the socket
     // and process commands from the client based on your protocol
@@ -79,15 +90,6 @@ int main(int argc, char *argv[]) {
             continue;
         }
 
-        // Allocate memory for a new socket descriptor
-        int *new_sock = malloc(sizeof(int));
-        if (new_sock == NULL) {
-            perror("ERROR allocating memory for new socket");
-            close(newsockfd);
-            continue;
-        }
-        *new_sock = newsockfd;
-
         // Create a new thread for this client
         pthread_t tid;
 
@@ -95,7 +97,7 @@ int main(int argc, char *argv[]) {
         if (args == NULL) {
             perror("ERROR allocating thread arguments");
         }
-        args->new_sock = new_sock;
+        args->new_sock = newsockfd;
         args->client_list = &client_list;
         args->session_list = &session_list;
         args->n_clients = &n_clients;
@@ -104,7 +106,6 @@ int main(int argc, char *argv[]) {
         if (pthread_create(&tid, NULL, client_handler, (void *)args) < 0) {
             perror("ERROR creating thread");
             close(newsockfd);
-            free(new_sock);
             continue;
         }
 
