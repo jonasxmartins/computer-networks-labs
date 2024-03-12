@@ -18,21 +18,14 @@
 #define QUERY 12
 #define QU_ACK 13
 
-// #define LOGIN_ACK 200
-// #define LOGIN_NAK 400
-// #define JOIN_ACK 202
-// #define JOIN_NAK 402
-// #define NEWSESSION_ACK 204
-// #define NS_ACK 
-
 #define CLIENT 69
 #define SERVER 420
 
 struct Packet {
     unsigned int type;
     unsigned int size;
-    unsigned char source[MAX_NAME];
-    unsigned char data[MAX_DATA];
+    char source[MAX_NAME];
+    char data[MAX_DATA];
 
 };
 
@@ -46,44 +39,34 @@ struct Client {
 };
 
 struct Session {
-    char session_id[MAX_NAME];
+    char session_id[MAX_DATA];
     struct Client *clients_in_list;
+    int n_clients_in_sess;
 };
 
 // Server side helper functions
 
 int attempt_login(int sock, struct Packet packet, struct Client *client_list, unsigned int n_clients);
 
-//int lo_ack(struct Client client); implemented in attempt_login
+int attempt_join(struct Client *self, struct Packet packet, struct Session *session_list, unsigned int n_sessions);
 
-//int lo_nak(struct Client client); implemented in attempt_login
+int attempt_leave(struct Client *self, struct Packet packet, struct Session *session_list, unsigned int n_sessions);
 
-int attempt_join(struct Client *client, struct Session *session_list);
-
-int attempt_leave(struct Client *client, struct Session *session_list);
-
-int attempt_new(struct Client *client, struct Session *session_list);
-
-int jn_ack(struct Client client);
-
-int jn_nak(struct Client client);
+int attempt_new(struct Client *self, struct Packet packet, struct Session *session_list, unsigned int n_sessions);
 
 struct Packet make_packet(int type, int size, unsigned char source[MAX_NAME], unsigned char data[MAX_DATA]);
  
-char* make_query_message(struct Client *client_list, struct Session *session_list);
+int send_query_message(struct Client *self, struct Client *client_list, struct Session *session_list, unsigned int n_sessions, unsigned int n_clients);
+
+void send_message(struct Client *self, struct Packet packet, struct Session *session_list, unsigned int n_sessions);
 
 void packet_to_message(struct Packet packet, char *message);
 
 struct Packet message_to_packet(char message[BUFFERSIZE]);
 
 void print_packet(struct Packet pack);
+
 void print_client(struct Client client);
-
-
-
-
-
-
 
 
 #endif

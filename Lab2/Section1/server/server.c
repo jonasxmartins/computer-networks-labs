@@ -11,10 +11,10 @@
 
 
 // key variables for server functionality
-unsigned int n_sessions = 0;
-unsigned int n_clients = 1;
-struct Session session_list[16];
-struct Client client_list[64];
+unsigned int n_sessions = 0; // NOT HARD CODED
+unsigned int n_clients = 1; // HARD CODED
+struct Session session_list[16]; // NOT HARD CODED
+struct Client client_list[64]; // PARTIALLY HARD CODED
 int current_sock = 0;
 
 void *client_handler(void *args) {
@@ -25,6 +25,9 @@ void *client_handler(void *args) {
     struct Packet login_packet;
     bool login_success = false;
     struct Client *self;
+    self->in_session = 0;
+    self->socket_fd = sock;
+    self->connected = 0;
 
     // Loop until login is successful
     while (!login_success) {
@@ -48,7 +51,7 @@ void *client_handler(void *args) {
                     self = &client_list[i];
                     break;
                 }
-    } 
+            } 
         } else {
             printf("Login failed");
         }
@@ -87,17 +90,39 @@ void *client_handler(void *args) {
                     perror("send failed");
                     return -1;
                 }
+                break;
             case EXIT:
                 self->connected = 0;
-                self->in_session = 0;    
+                self->in_session = 0;  
+                break;
             case JOIN:
-                attempt_join(self, )
+                if (attempt_join(self, req_packet, &session_list, n_sessions) >= 0)
+                    printf("Joining session successful\n");
+                else printf("Joining session unsuccessful\n");
+                break;
+
             case LEAVE_SESS:
+                if (attempt_leave(self, req_packet, &session_list, n_sessions) >= 0)
+                    printf("Leaving session successful\n");
+                else printf("Leaving session unsuccessful\n");
+                break;
             case NEW_SESS:
+                if (attempt_new(self, req_packet, &session_list, n_sessions) >= 0)
+                    printf("New session successful\n");
+                else printf("New session unsuccessful\n");
+                break;
             case MESSAGE:
+                if (send_session_message(self, req_packet, &session_list) >= 0)
+                    printf("Message sent sucessfully\n");
+                else printf("Message sent sucessfully\n");
+                break;
             case QUERY:
+                if (send_query_message(self, &session_list) >= 0)
+                    printf("Query sent successfully\n");
+                else printf("Query sent unsuccessfully\n");
+                break;
             default:
-                continue;
+                break;
         }
     }
 
