@@ -13,8 +13,8 @@ struct thread_args {
     int new_sock;
     unsigned int *n_sessions;
     unsigned int *n_clients;
-    struct Client *client_list;
-    struct Session *session_list;
+    struct Client **client_list;
+    struct Session **session_list;
 };
 
 
@@ -24,8 +24,8 @@ void *client_handler(void *args) {
     int sock = threadArgs->new_sock;
     unsigned int *n_sessions = threadArgs->n_sessions;
     unsigned int *n_clients = threadArgs->n_clients;
-    struct Client *client_list = threadArgs->client_list;
-    struct Session *session_list = threadArgs->session_list; 
+    struct Client **client_list = threadArgs->client_list;
+    struct Session **session_list = threadArgs->session_list; 
 
     free(args); // Free the heap memory allocated for the socket descriptor
 
@@ -47,7 +47,7 @@ void *client_handler(void *args) {
         }
         login_packet = message_to_packet(buffer);
 
-        if (attempt_login(sock, login_packet, &client_list, *n_clients) >= 0) {
+        if (attempt_login(sock, login_packet, client_list, *n_clients) >= 0) {
             printf("Login successful\n");
             login_success = true;
         } else {
@@ -117,8 +117,8 @@ int main(int argc, char *argv[]) {
             perror("ERROR allocating thread arguments");
         }
         args->new_sock = newsockfd;
-        args->client_list = &client_list;
-        args->session_list = &session_list;
+        args->client_list = client_list;
+        args->session_list = session_list;
         args->n_clients = &n_clients;
         args->n_sessions = &n_sessions;
 
