@@ -1,4 +1,4 @@
-#include "structs.h"
+#include "structs/structs.h"
 #include <string.h>
 #include <unistd.h>
 

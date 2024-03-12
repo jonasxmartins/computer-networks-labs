@@ -6,7 +6,7 @@
 #include <sys/socket.h>
 #include <stdbool.h>
 #include <pthread.h>
-#include "structs.h"
+#include "structs/structs.h"
 
 struct thread_args {
     int new_sock;
@@ -46,7 +46,7 @@ void *client_handler(void *args) {
         }
         login_packet = message_to_packet(buffer);
 
-        if (attempt_login(login_packet, client_list) >= 0) {
+        if (attempt_login(sock, login_packet, &client_list, *n_clients) >= 0) {
             printf("Login successful\n");
             login_success = true;
         } else {
