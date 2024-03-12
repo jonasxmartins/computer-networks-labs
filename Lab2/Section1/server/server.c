@@ -60,10 +60,11 @@ void *client_handler(void *args) {
     // You can use a loop here to continuously read from the socket
     // and process commands from the client based on your protocol
     while(1){
+        char buffer[BUFFERSIZE];
         memset(buffer, 0, BUFFERSIZE);
         struct Packet req_packet, resp_packet;
-
-        ssize_t received_len = recv(sock, buffer, BUFFERSIZE - 1, 0);
+        
+        ssize_t received_len = recv(sock, buffer, BUFFERSIZE, 0);
         if (received_len < 0) {
             printf("Client not connected\n");
             break;
@@ -71,7 +72,9 @@ void *client_handler(void *args) {
             printf("Client disconnected\n");
             break; 
         }
+
         req_packet = message_to_packet(buffer);
+        printf("here1\n");
         int req_type = req_packet.type;
 
         switch(req_type) {
@@ -111,6 +114,7 @@ void *client_handler(void *args) {
                 break;
 
             case NEW_SESS:
+            printf("newsess\n");
                 if (attempt_new(self, req_packet, session_list, n_sessions) >= 0)
                     printf("New session successful\n");
                 else printf("New session unsuccessful\n");

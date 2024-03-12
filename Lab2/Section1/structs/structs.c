@@ -28,6 +28,8 @@ void packet_to_message(struct Packet packet, char *message)
 
 struct Packet message_to_packet(char message[BUFFERSIZE])
 {
+    printf("message to packet\n");
+    printf("%s\n", message);
     struct Packet pack;
     pack.type = atoi(strtok(message, ":"));
     pack.size = atoi(strtok(NULL, ":"));

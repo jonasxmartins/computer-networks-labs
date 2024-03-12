@@ -24,7 +24,7 @@ void send_message_client(char *buffer);
 
 //Global variables
 bool in_session = false;
-char* client_id;
+char client_id[MAX_NAME];
 
 int fd;
 
@@ -45,7 +45,8 @@ void *log_in(void *arg)
 
     buffer[strcspn(buffer, "\n")] = '\0';
     char* command = strtok(buffer, " ");
-    client_id = strtok(NULL, " ");
+    char* id = strtok(NULL, " ");
+    strncpy(client_id, id, MAX_NAME);
     char* password = strtok(NULL, " ");
     char* server_IP = strtok(NULL, " ");
     char* server_port = strtok(NULL, " ");
@@ -263,14 +264,14 @@ void *user_thread(void *arg)
         {
             char *session = strtok(NULL, " ");
             if (session == NULL) printf("Invalid session name\n");
-            else create_or_join_session(buffer, JOIN);
+            else create_or_join_session(session, JOIN);
             break;
         }
         case NEW_SESS:
         {
             char *session = strtok(NULL, " ");
             if (session == NULL) printf("Invalid session name\n");
-            else create_or_join_session(buffer, NEW_SESS);
+            else create_or_join_session(session, NEW_SESS);
             break;
         }
         case MESSAGE:
@@ -336,8 +337,10 @@ void request_command(int command)
 void create_or_join_session(char *buffer, int command)
 {
     char message[BUFFERSIZE];
+
     struct Packet pack = make_packet(command, strlen(buffer), client_id, buffer);
     packet_to_message(pack, message);
+
     if (!send(fd, message, strlen(message), 0))
         {
             perror("send session");
@@ -348,6 +351,7 @@ void create_or_join_session(char *buffer, int command)
 void send_message_client(char *buffer)
 {
     char message[BUFFERSIZE];
+    
     struct Packet pack = make_packet(MESSAGE, strlen(buffer), client_id, buffer);
     packet_to_message(pack, message);
     if (!send(fd, message, strlen(message), 0))
