@@ -197,7 +197,7 @@ void nack_join(struct Packet pack)
 {
     char data[MAX_DATA];
 
-    strncpy(data[MAX_DATA], pack.data, MAX_DATA);
+    strncpy(data, pack.data, MAX_DATA);
 
     char* session = strtok(data, ", ");
     char* reason = strtok(NULL, ", ");
