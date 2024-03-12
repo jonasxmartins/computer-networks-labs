@@ -202,7 +202,12 @@ int attempt_new(struct Client *self, struct Packet packet, struct Session *sessi
     return new_status;
 }
 
-int send_query_message(struct Client *self, struct Client *client_list, struct Session *session_list, unsigned int n_sessions, unsigned int n_clients) {
+int send_query_message(struct Client *self, 
+                       struct Client *client_list, 
+                       struct Session *session_list, 
+                       unsigned int n_sessions, 
+                       unsigned int n_clients) {
+
     char message[BUFFERSIZE] = {0}; // Assuming BUFFERSIZE is defined and sufficient
     strcat(message, "Online Users:\n");
 
@@ -213,7 +218,6 @@ int send_query_message(struct Client *self, struct Client *client_list, struct S
             strcat(message, "\n");
         }
     }
-
     strcat(message, "Available Sessions:\n");
 
     // Iterate through sessions to list available sessions
@@ -246,26 +250,28 @@ int send_query_message(struct Client *self, struct Client *client_list, struct S
 }
 
 void send_message(struct Client *self, struct Packet packet, struct Session *session_list, unsigned int n_sessions){
-    int message_status = -1;
     int sess_index = 0;
-    if (self->connected == 1 && self->in_session == 1) message_status = 0;
+    if (self->connected == 0 || self->in_session == 0) return;
+
     for (int i = 0; i < n_sessions; i++){
-        if (packet.data == session_list[i].session_id) sess_index = i;
+        if (strcmp(packet.data, session_list[i].session_id) == 0) sess_index = i;
     }
+
     for (int i = 0; i < session_list[sess_index].n_clients_in_sess; i++){
-        if (session_list[sess_index].clients_in_list[i].client_id != self->client_id){
+        
+        if (strcmp(session_list[sess_index].clients_in_list[i].client_id, self->client_id) != 0){
+            
             struct Packet response_packet;
             memset(&response_packet, 0, sizeof(response_packet)); // Clear the response packet structure
-
+            
             response_packet.type = MESSAGE;
+            response_packet.size = strlen(packet.data);
             strcpy((char *)response_packet.source, self->client_id);
             strcpy((char *)response_packet.data, packet.data);
-            response_packet.size = len(packet.data);
             
             char response_buffer[BUFFERSIZE];
             memset(response_buffer, 0, BUFFERSIZE);
             packet_to_message(response_packet, response_buffer);
-            response_buffer[strlen(response_buffer)] = '\0';
 
             if (send(session_list[sess_index].clients_in_list[i].socket_fd, response_buffer, strlen(response_buffer), 0) < 0) {
                 perror("send failed");
