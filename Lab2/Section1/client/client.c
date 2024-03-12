@@ -7,6 +7,7 @@
 #include <stdbool.h>
 #include <pthread.h>
 #include "structs/structs.h"
+#include <unistd.h>
 
 #define BUFFERSIZE 2048
 
@@ -22,8 +23,7 @@ int fd;
 int main(void)
 {
     log_in(NULL);
-
-    return 0;
+    pthread_exit(0);
 }
 
 void *log_in(void *arg)

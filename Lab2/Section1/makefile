@@ -7,7 +7,7 @@ all: server client
 
 # Compile the server program
 server: server/server.o structs/structs.o
-	$(CC) -o server/server server/server.o structs/structs.o $(LDFLAGS)
+	$(CC) -o server/server server/server.o structs/structs.o $(LDFLAGS) -lm
 
 # Compile the client program
 client: client/client.o structs/structs.o 

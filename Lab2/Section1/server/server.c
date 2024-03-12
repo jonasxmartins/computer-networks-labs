@@ -7,13 +7,14 @@
 #include <stdbool.h>
 #include <pthread.h>
 #include "structs/structs.h"
+#include <unistd.h>
 
 struct thread_args {
     int new_sock;
     unsigned int *n_sessions;
     unsigned int *n_clients;
-    struct Client *client_list;
-    struct Session *session_list;
+    struct Client **client_list;
+    struct Session **session_list;
 };
 
 
@@ -23,8 +24,8 @@ void *client_handler(void *args) {
     int sock = threadArgs->new_sock;
     unsigned int *n_sessions = threadArgs->n_sessions;
     unsigned int *n_clients = threadArgs->n_clients;
-    struct Client *client_list = threadArgs->client_list;
-    struct Session *session_list = threadArgs->session_list; 
+    struct Client **client_list = threadArgs->client_list;
+    struct Session **session_list = threadArgs->session_list; 
 
     free(args); // Free the heap memory allocated for the socket descriptor
 
