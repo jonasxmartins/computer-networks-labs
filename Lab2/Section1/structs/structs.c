@@ -28,7 +28,6 @@ void packet_to_message(struct Packet packet, char *message)
 
 struct Packet message_to_packet(char message[BUFFERSIZE])
 {
-    printf("message to packet\n");
     printf("%s\n", message);
     struct Packet pack;
     pack.type = atoi(strtok(message, ":"));
@@ -88,7 +87,7 @@ int attempt_login(int sock, struct Packet packet, struct Client *client_list, un
     return login_status;
 }
 
-int attempt_join(struct Client *self, struct Packet packet, struct Session *session_list, unsigned int n_sessions){
+int attempt_join(struct Client *self, struct Packet packet, struct Session *session_list, unsigned int n_sessions, int sock){
     int join_status = -1;
     int sess_index = 0;
     bool session_exists = false;
@@ -129,15 +128,15 @@ int attempt_join(struct Client *self, struct Packet packet, struct Session *sess
     memset(response_buffer, 0, BUFFERSIZE);
     packet_to_message(response_packet, response_buffer);
     response_buffer[strlen(response_buffer)] = '\0';
-
-    if (send(self->socket_fd, response_buffer, strlen(response_buffer), 0) < 0) {
+   
+    if (send(sock, response_buffer, strlen(response_buffer), 0) < 0) {
         perror("send failed");
         return -1;
     }
     return join_status;
 }
 
-int attempt_leave(struct Client *self, struct Packet packet, struct Session *session_list, unsigned int n_sessions) {
+int attempt_leave(struct Client *self, struct Packet packet, struct Session *session_list, unsigned int n_sessions, int sock) {
     if (self->connected != 1 || self->in_session != 1) {
         printf("Client is not in a session.\n");
         return -1;
@@ -183,10 +182,9 @@ int attempt_leave(struct Client *self, struct Packet packet, struct Session *ses
 }
 
 
-int attempt_new(struct Client *self, struct Packet packet, struct Session *session_list, unsigned int n_sessions){
+int attempt_new(struct Client *self, struct Packet packet, struct Session *session_list, unsigned int n_sessions, int sock){
     int new_status = -1;
     bool session_exists = false;
-
     for (int i = 0; i < n_sessions; i++) {
         if (strcmp(packet.data, session_list[i].session_id) == 0) {
             session_exists = true;
@@ -222,11 +220,11 @@ int attempt_new(struct Client *self, struct Packet packet, struct Session *sessi
     memset(response_buffer, 0, BUFFERSIZE);
     packet_to_message(response_packet, response_buffer);
     response_buffer[strlen(response_buffer)] = '\0';
-
-    if (send(self->socket_fd, response_buffer, strlen(response_buffer), 0) < 0) {
+    if (send(sock, response_buffer, strlen(response_buffer), 0) < 0) {
         perror("send failed");
         return -1;
     }
+    printf("%d\n", new_status);
     return new_status;
 }
 
@@ -234,7 +232,8 @@ int send_query_message(struct Client *self,
                        struct Client *client_list, 
                        struct Session *session_list, 
                        unsigned int n_sessions, 
-                       unsigned int n_clients) {
+                       unsigned int n_clients
+                       , int sock) {
 
     char message[BUFFERSIZE] = {0}; // Assuming BUFFERSIZE is defined and sufficient
     strcat(message, "Online Users:\n");
@@ -270,7 +269,7 @@ int send_query_message(struct Client *self,
     packet_to_message(response_packet, response_buffer);
     response_buffer[strlen(response_buffer)] = '\0';
 
-    if (send(self->socket_fd, response_buffer, strlen(response_buffer), 0) < 0) {
+    if (send(sock, response_buffer, strlen(response_buffer), 0) < 0) {
         perror("send failed");
         return -1;
     }
@@ -278,7 +277,7 @@ int send_query_message(struct Client *self,
     return 0;
 }
 
-void send_message(struct Client *self, struct Packet packet, struct Session *session_list, unsigned int n_sessions){
+void send_message(struct Client *self, struct Packet packet, struct Session *session_list, unsigned int n_sessions, int sock){
     int sess_index = 0;
     if (self->connected == 0 || self->in_session == 0) return;
 

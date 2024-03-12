@@ -18,7 +18,7 @@ struct Client client_list[64]; // PARTIALLY HARD CODED
 int current_sock = 0;
 
 void *client_handler(void *args) {
-
+    
     int sock = current_sock;
 
     char buffer[BUFFERSIZE];
@@ -28,7 +28,7 @@ void *client_handler(void *args) {
     self->in_session = 0;
     self->socket_fd = sock;
     self->connected = 0;
-
+    printf("%d\n", self->socket_fd);
     // Loop until login is successful
     while (!login_success) {
         memset(buffer, 0, BUFFERSIZE);
@@ -74,11 +74,11 @@ void *client_handler(void *args) {
         }
 
         req_packet = message_to_packet(buffer);
-        printf("here1\n");
-        int req_type = req_packet.type;
 
+        int req_type = req_packet.type;
         switch(req_type) {
             case LOGIN:
+            {
             // already logged in
                 resp_packet.type = LO_ACK;
                 strcpy((char *)resp_packet.source, "SERVER");
@@ -95,41 +95,47 @@ void *client_handler(void *args) {
                     exit(-1);
                 }
                 break;
-
+            }
             case EXIT:
+            {
                 self->connected = 0;
                 self->in_session = 0;  
                 break;
-
+            }
             case JOIN:
-                if (attempt_join(self, req_packet, session_list, n_sessions) >= 0)
+            {
+                if (attempt_join(self, req_packet, session_list, n_sessions, sock) >= 0)
                     printf("Joining session successful\n");
                 else printf("Joining session unsuccessful\n");
                 break;
-
+            }
             case LEAVE_SESS:
-                if (attempt_leave(self, req_packet, session_list, n_sessions) >= 0)
+            {
+                if (attempt_leave(self, req_packet, session_list, n_sessions, sock) >= 0)
                     printf("Leaving session successful\n");
                 else printf("Leaving session unsuccessful\n");
                 break;
-
+            }
             case NEW_SESS:
-            printf("newsess\n");
-                if (attempt_new(self, req_packet, session_list, n_sessions) >= 0)
-                    printf("New session successful\n");
+            {
+                int res = attempt_new(self, req_packet, session_list, n_sessions, sock);
+                printf("res%d\n", res);
+                if (res >= 0) printf("New session successful\n");
                 else printf("New session unsuccessful\n");
                 break;
-
+            }
             case MESSAGE:
-                send_message(self, req_packet, session_list, n_sessions);
+            {
+                send_message(self, req_packet, session_list, n_sessions, sock);
                 break;
-
+            }
             case QUERY:
-                if (send_query_message(self, client_list, session_list, n_sessions, n_clients) >= 0)
+            {
+                if (send_query_message(self, client_list, session_list, n_sessions, n_clients, sock) >= 0)
                     printf("Query sent successfully\n");
                 else printf("Query sent unsuccessfully\n");
                 break;
-
+            }
             default:
                 break;
         }
@@ -188,7 +194,7 @@ int main(int argc, char *argv[]) {
             perror("ERROR on accept");
             continue;
         }
-
+        printf("main_thread\n");
         // Create a new thread for this client
         pthread_t tid;
         current_sock = newsockfd;

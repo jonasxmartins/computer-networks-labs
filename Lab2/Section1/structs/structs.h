@@ -48,17 +48,17 @@ struct Session {
 
 int attempt_login(int sock, struct Packet packet, struct Client *client_list, unsigned int n_clients);
 
-int attempt_join(struct Client *self, struct Packet packet, struct Session *session_list, unsigned int n_sessions);
+int attempt_join(struct Client *self, struct Packet packet, struct Session *session_list, unsigned int n_sessions, int sock);
 
-int attempt_leave(struct Client *self, struct Packet packet, struct Session *session_list, unsigned int n_sessions);
+int attempt_leave(struct Client *self, struct Packet packet, struct Session *session_list, unsigned int n_sessions, int sock);
 
-int attempt_new(struct Client *self, struct Packet packet, struct Session *session_list, unsigned int n_sessions);
+int attempt_new(struct Client *self, struct Packet packet, struct Session *session_list, unsigned int n_sessions, int sock);
 
 struct Packet make_packet(int type, int size, unsigned char source[MAX_NAME], unsigned char data[MAX_DATA]);
  
-int send_query_message(struct Client *self, struct Client *client_list, struct Session *session_list, unsigned int n_sessions, unsigned int n_clients);
+int send_query_message(struct Client *self, struct Client *client_list, struct Session *session_list, unsigned int n_sessions, unsigned int n_clients, int sock);
 
-void send_message(struct Client *self, struct Packet packet, struct Session *session_list, unsigned int n_sessions);
+void send_message(struct Client *self, struct Packet packet, struct Session *session_list, unsigned int n_sessions, int sock);
 
 void packet_to_message(struct Packet packet, char *message);
 
