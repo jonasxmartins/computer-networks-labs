@@ -7,6 +7,7 @@
 #include <stdbool.h>
 #include <pthread.h>
 #include "structs/structs.h"
+#include <unistd.h>
 
 struct thread_args {
     int new_sock;

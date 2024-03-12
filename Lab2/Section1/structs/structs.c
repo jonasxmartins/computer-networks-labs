@@ -1,6 +1,14 @@
 #include "structs/structs.h"
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
+#include <netdb.h>
+#include <sys/socket.h>
+#include <stdbool.h>
+#include <pthread.h>
 #include <unistd.h>
+
 
 struct Packet make_packet(int type, int size, unsigned char source[MAX_NAME], unsigned char data[MAX_DATA])
 {
