@@ -69,6 +69,8 @@ int main(void)
         exit(8);
     }
 
+    send(fd, )
+
     pthread_t wait_server, wait_user;
 
     if (pthread_create(&wait_server, NULL, server_thread, NULL) != 0)
