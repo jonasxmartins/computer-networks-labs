@@ -1,5 +1,6 @@
 #include "structs.h"
 #include <string.h>
+#include <unistd.h>
 
 struct Packet make_packet(int type, int size, unsigned char source[MAX_NAME], unsigned char data[MAX_DATA])
 {
@@ -27,3 +28,54 @@ struct Packet message_to_packet(char message[BUFFERSIZE])
 
     return pack;
 }
+
+
+int attempt_login(int sock, struct Packet packet, struct Client **client_list, unsigned int n_clients) {
+    int login_status = -1;
+
+    if (packet.type != LOGIN) return -2;
+
+    for (int i = 0; i < n_clients; i++) {
+        if (strcmp((char *)packet.source, client_list[i]->client_id) == 0 &&
+            strcmp((char *)packet.data, client_list[i]->password) == 0 &&
+            client_list[i]->connected == 0) {
+            
+            client_list[i]->connected = 1;
+            login_status = 0; // Login success
+            break;
+        }
+    }
+
+    // Prepare a response packet
+    struct Packet response_packet;
+    memset(&response_packet, 0, sizeof(response_packet)); // Clear the response packet structure
+
+    if (login_status == 0) {
+        // Login successful, prepare lo_ack response
+        response_packet.type = LO_ACK;
+        strcpy((char *)response_packet.source, "SERVER");
+        strcpy((char *)response_packet.data, "Login Successful.");
+        response_packet.size = 18;
+
+    } else {
+        // Login failed, prepare lo_nak response
+        response_packet.type = LO_NAK;
+        strcpy((char *)response_packet.source, "SERVER");
+        strcpy((char *)response_packet.data, "Login Unsuccessful.");
+        response_packet.size = 20;
+    }
+
+    // Convert response_packet to a string or binary format as per your protocol
+    char response_buffer[BUFFERSIZE];
+    memset(response_buffer, 0, BUFFERSIZE);
+    // Assume packet_to_message does the conversion. Adjust as per your actual function signature and usage.
+    packet_to_message(response_packet, response_buffer);
+    response_buffer[strlen(response_buffer)] = '\0';
+    // Send the response
+    if (send(sock, response_buffer, strlen(response_buffer), 0) < 0) {
+        perror("send failed");
+        return -1;
+    }
+    return login_status;
+}
+

@@ -7,7 +7,6 @@
 #include <stdbool.h>
 #include <pthread.h>
 #include "structs.h"
-#define BUFFER_SIZE 2048
 
 struct thread_args {
     int new_sock;
@@ -29,9 +28,31 @@ void *client_handler(void *args) {
 
     free(args); // Free the heap memory allocated for the socket descriptor
 
-    char buffer[BUFFER_SIZE];
-    memset(buffer, 0, BUFFER_SIZE);
-    
+    char buffer[BUFFERSIZE];
+    struct Packet login_packet;
+    bool login_success = false;
+
+    // Loop until login is successful
+    while (!login_success) {
+        memset(buffer, 0, BUFFERSIZE);
+
+        ssize_t received_len = recv(sock, buffer, BUFFERSIZE - 1, 0);
+        if (received_len < 0) {
+            perror("recv failed");
+            break;
+        } else if (received_len == 0) {
+            printf("Client disconnected\n");
+            break; 
+        }
+        login_packet = message_to_packet(buffer);
+
+        if (attempt_login(login_packet, client_list) >= 0) {
+            printf("Login successful\n");
+            login_success = true;
+        } else {
+            perror("Login failed");
+        }
+    }
 
 
 

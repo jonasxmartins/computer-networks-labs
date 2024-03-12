@@ -37,21 +37,22 @@ struct Packet {
 };
 
 struct Client {
-    static char client_id[MAX_NAME];
-    static char password[MAX_DATA];
+    char client_id[MAX_NAME];
+    char password[MAX_DATA];
     char session_id[MAX_DATA];
     int socket_fd;
-    bool connected;
-    bool in_session;
+    int connected;
+    int in_session;
 };
 
 struct Session {
-    static char session_id[MAX_NAME];
+    char session_id[MAX_NAME];
     struct Client *clients_in_list;
 };
 
 // Server side helper functions
-int attempt_login(struct Client client_logging_in, struct Client *client_list);
+
+int attempt_login(int sock, struct Packet packet, struct Client **client_list, unsigned int n_clients);
 
 int lo_ack(struct Client client);
 
