@@ -123,7 +123,7 @@ printf("received packet number 1 of %d\n", number_of_fragments);
         }
         pack = makeStruct(buffer, bytes_received);
         packetList[pack.frag_no - 1] = pack;
-        printf("received packet number %d\n of %d\n", pack.frag_no, number_of_fragments);
+        printf("received packet number %d of %d\n", pack.frag_no, number_of_fragments);
         if (acknowledge())
         {
             int size_ack = makeAcknowledgement(pack.filename, pack.frag_no, ack);
@@ -139,6 +139,13 @@ printf("received packet number 1 of %d\n", number_of_fragments);
         {
             printf("packet number %u dropped\n", pack.frag_no);
         }
+    }
+    size_ack = makeAcknowledgement(pack.filename, number_of_fragments, ack);
+    bytes_sent = sendto(fd, ack, size_ack, 0, (struct sockaddr*)&sourceAddress, size);
+    if (bytes_sent == -1)
+    {
+        perror("send acknowledge");
+        exit(89);
     }
 
     char *data;

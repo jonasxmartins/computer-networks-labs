@@ -61,7 +61,7 @@ int jn_ack(struct Client client);
 int jn_nak(struct Client client);
 
 struct Packet make_packet(int type, int size, unsigned char source[MAX_NAME], unsigned char data[MAX_DATA]);
-
+ 
 char* make_query_message(struct Client *client_list, struct Session *session_list);
 
 char* packet_to_message(struct Packet packet);

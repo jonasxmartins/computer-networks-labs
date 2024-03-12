@@ -5,8 +5,12 @@
 #include <netdb.h>
 #include <sys/socket.h>
 #include <stdbool.h>
+#include <pthread.h>
 
 #define BUFFERSIZE 2048
+
+void server_thread();
+void user_thread();
 
 int main(void)
 {
@@ -65,13 +69,19 @@ int main(void)
         exit(8);
     }
 
-    struct sockaddr_storage sourceAddress;
-    socklen_t size = sizeof(sourceAddress);
+    pthread_t wait_server, wait_user;
 
+    if (pthread_create(&wait_server, NULL, server_thread, NULL) != 0)
+    {
+        perror("server thread");
+        exit(99);
+    }
 
+    if (pthread_create(&wait_user, NULL, user_thread, NULL) != 0)
+    {
+        perror("user thread");
+        exit(99);
+    }
 
-    // connect() and logic that follows
-
-    freeaddrinfo(serverInfo);
     return 0;
 }
