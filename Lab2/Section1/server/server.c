@@ -117,7 +117,7 @@ void *client_handler(void *args) {
                 break;
 
             case MESSAGE:
-                if (send_session_message(self, req_packet, &session_list) >= 0)
+                if (send_message(self, req_packet, &session_list) >= 0)
                     printf("Message sent sucessfully\n");
                 else printf("Message sent sucessfully\n");
                 break;
