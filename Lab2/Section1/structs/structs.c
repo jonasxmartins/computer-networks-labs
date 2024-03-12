@@ -135,7 +135,7 @@ int attempt_join(struct Client *self, struct Packet packet, struct Session *sess
     return join_status;
 }
 
-int attempt_leave(struct Client *self, struct Session *session_list, unsigned int n_sessions) {
+int attempt_leave(struct Client *self, struct Packet packet, struct Session *session_list, unsigned int n_sessions) {
     if (self->connected != 1 || self->in_session != 1) {
         printf("Client is not in a session.\n");
         return -1;
@@ -272,7 +272,7 @@ int send_query_message(struct Client *self,
         perror("send failed");
         return -1;
     }
-    print("%s", response_buffer);
+    printf("%s", response_buffer);
     return 0;
 }
 
@@ -303,7 +303,7 @@ void send_message(struct Client *self, struct Packet packet, struct Session *ses
 
             if (send(session_list[sess_index].clients_in_list[i].socket_fd, response_buffer, strlen(response_buffer), 0) < 0) {
                 perror("send failed");
-                return -1;
+                return;
             }
         }
     }

@@ -20,7 +20,7 @@ void ack_query(struct Packet pack);
 int command_encoder(char* command);
 void request_command(int command);
 void create_or_join_session(char *buffer, int command);
-void send_message(char *buffer);
+void send_message_client(char *buffer);
 
 //Global variables
 bool in_session = false;
@@ -277,7 +277,7 @@ void *user_thread(void *arg)
         {
             int sz = strlen(buffer);
             buffer[sz] = ' ';
-            send_message(buffer);
+            send_message_client(buffer);
         }
         default:
             break;
@@ -345,7 +345,7 @@ void create_or_join_session(char *buffer, int command)
         }
 }
 
-void send_message(char *buffer)
+void send_message_client(char *buffer)
 {
     char message[BUFFERSIZE];
     struct Packet pack = make_packet(MESSAGE, strlen(buffer), client_id, buffer);
