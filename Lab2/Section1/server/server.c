@@ -38,7 +38,7 @@ void *client_handler(void *args) {
 
         ssize_t received_len = recv(sock, buffer, BUFFERSIZE - 1, 0);
         if (received_len < 0) {
-            perror("recv failed");
+            printf("Client not connected\n");
             break;
         } else if (received_len == 0) {
             printf("Client disconnected\n");
@@ -46,7 +46,7 @@ void *client_handler(void *args) {
         }
         login_packet = message_to_packet(buffer);
 
-        if (attempt_login(sock, login_packet, &client_list, *n_clients) >= 0) {
+        if (attempt_login(sock, login_packet, client_list, n_clients) >= 0) {
             printf("Login successful\n");
             login_success = true;
         } else {
@@ -116,8 +116,8 @@ int main(int argc, char *argv[]) {
             perror("ERROR allocating thread arguments");
         }
         args->new_sock = newsockfd;
-        args->client_list = &client_list;
-        args->session_list = &session_list;
+        args->client_list = client_list;
+        args->session_list = session_list;
         args->n_clients = &n_clients;
         args->n_sessions = &n_sessions;
 

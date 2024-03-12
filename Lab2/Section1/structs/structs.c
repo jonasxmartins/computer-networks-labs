@@ -30,17 +30,17 @@ struct Packet message_to_packet(char message[BUFFERSIZE])
 }
 
 
-int attempt_login(int sock, struct Packet packet, struct Client **client_list, unsigned int n_clients) {
+int attempt_login(int sock, struct Packet packet, struct Client *client_list, unsigned int *n_clients) {
     int login_status = -1;
 
     if (packet.type != LOGIN) return -2;
 
-    for (int i = 0; i < n_clients; i++) {
-        if (strcmp((char *)packet.source, client_list[i]->client_id) == 0 &&
-            strcmp((char *)packet.data, client_list[i]->password) == 0 &&
-            client_list[i]->connected == 0) {
+    for (int i = 0; i < *n_clients; i++) {
+        if (strcmp((char *)packet.source, client_list[i].client_id) == 0 &&
+            strcmp((char *)packet.data, client_list[i].password) == 0 &&
+            client_list[i].connected == 0) {
             
-            client_list[i]->connected = 1;
+            client_list[i].connected = 1;
             login_status = 0; // Login success
             break;
         }

@@ -52,7 +52,7 @@ struct Session {
 
 // Server side helper functions
 
-int attempt_login(int sock, struct Packet packet, struct Client **client_list, unsigned int n_clients);
+int attempt_login(int sock, struct Packet packet, struct Client *client_list, unsigned int *n_clients);
 
 int lo_ack(struct Client client);
 
