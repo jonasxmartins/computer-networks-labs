@@ -55,9 +55,6 @@ void *client_handler(void *args) {
         }
     }
 
-
-
-
     // You can use a loop here to continuously read from the socket
     // and process commands from the client based on your protocol
     while(1){
