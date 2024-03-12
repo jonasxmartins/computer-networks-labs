@@ -7,11 +7,11 @@ all: server client
 
 # Compile the server program
 server: server/server.o structs/structs.o
-	$(CC) -o server/server server/server.o structs/structs.o
+	$(CC) -o server/server server/server.o structs/structs.o $(LDFLAGS)
 
 # Compile the client program
 client: client/client.o structs/structs.o 
-	$(CC) -o client/client client/client.o structs/structs.o -lm
+	$(CC) -o client/client client/client.o structs/structs.o $(LDFLAGS) -lm
 
 # Pattern rule for compiling .c to .o
 server/%.o: server/%.c

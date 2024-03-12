@@ -10,9 +10,9 @@
 
 #define BUFFERSIZE 2048
 
-void log_in();
-void server_thread();
-void user_thread();
+void *log_in(void *arg);
+void *server_thread(void *arg);
+void *user_thread(void *arg);
 
 void nack_join(struct Packet pack);
 void ack_query(struct Packet pack);
@@ -21,12 +21,12 @@ int fd;
 
 int main(void)
 {
-    log_in();
+    log_in(NULL);
 
     return 0;
 }
 
-void log_in()
+void *log_in(void *arg)
 {
     int fd;
     int error;
@@ -69,7 +69,6 @@ void log_in()
         if (connect(fd, final->ai_addr, final->ai_addrlen) == -1)
         {
             perror("connect");
-            close(fd);
             continue;
         }
 
@@ -92,13 +91,13 @@ void log_in()
         char message[BUFFERSIZE];
         struct Packet pack = make_packet(1, strlen(password), client_id, password);
         packet_to_message(pack, message);
-        if (!send(fd, message, strlen(message), NULL))
+        if (!send(fd, message, strlen(message), 0))
         {
             perror("send login");
             exit(2);
         }
 
-        if (!recv(fd, buffer, BUFFERSIZE, NULL))
+        if (!recv(fd, buffer, BUFFERSIZE, 0))
         {
             perror("recv ack login");
             exit(3);
@@ -137,7 +136,7 @@ void log_in()
     }
 }
 
-void server_thread()
+void *server_thread(void *arg)
 {
     while(1)
     {
@@ -208,4 +207,9 @@ void nack_join(struct Packet pack)
 void ack_query(struct Packet pack)
 {
     return;
+}
+
+void *user_thread(void *arg)
+{
+    return 0;
 }
