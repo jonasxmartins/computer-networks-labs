@@ -73,7 +73,7 @@ void *client_handler(void *args) {
         }
         req_packet = message_to_packet(buffer);
         int req_type = req_packet.type;
-        
+
         switch(req_type) {
             case LOGIN:
             // already logged in
@@ -99,31 +99,29 @@ void *client_handler(void *args) {
                 break;
 
             case JOIN:
-                if (attempt_join(self, req_packet, session_list, n_sessions) >= 0)
+                if (attempt_join(self, req_packet, &session_list, n_sessions) >= 0)
                     printf("Joining session successful\n");
                 else printf("Joining session unsuccessful\n");
                 break;
 
             case LEAVE_SESS:
-                if (attempt_leave(self, req_packet, session_list, n_sessions) >= 0)
+                if (attempt_leave(self, req_packet, &session_list, n_sessions) >= 0)
                     printf("Leaving session successful\n");
                 else printf("Leaving session unsuccessful\n");
                 break;
 
             case NEW_SESS:
-                if (attempt_new(self, req_packet, session_list, n_sessions) >= 0)
+                if (attempt_new(self, req_packet, &session_list, n_sessions) >= 0)
                     printf("New session successful\n");
                 else printf("New session unsuccessful\n");
                 break;
 
             case MESSAGE:
-                if (send_message(self, req_packet, &session_list) >= 0)
-                    printf("Message sent sucessfully\n");
-                else printf("Message sent sucessfully\n");
+                send_message(self, req_packet, &session_list, n_sessions);
                 break;
 
             case QUERY:
-                if (send_query_message(self, &session_list, n_sessions, ) >= 0)
+                if (send_query_message(self, &client_list, &session_list, n_sessions, n_clients) >= 0)
                     printf("Query sent successfully\n");
                 else printf("Query sent unsuccessfully\n");
                 break;
