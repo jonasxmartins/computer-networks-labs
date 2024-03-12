@@ -258,7 +258,7 @@ void send_message(struct Client *self, struct Packet packet, struct Session *ses
     }
 
     for (int i = 0; i < session_list[sess_index].n_clients_in_sess; i++){
-        
+
         if (strcmp(session_list[sess_index].clients_in_list[i].client_id, self->client_id) != 0){
             
             struct Packet response_packet;
@@ -275,11 +275,11 @@ void send_message(struct Client *self, struct Packet packet, struct Session *ses
 
             if (send(session_list[sess_index].clients_in_list[i].socket_fd, response_buffer, strlen(response_buffer), 0) < 0) {
                 perror("send failed");
-                return -1;
+                return;
             }
         }
     }
-
+    return;
 }
 
 
