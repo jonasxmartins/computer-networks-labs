@@ -52,7 +52,7 @@ struct Session {
 
 // Server side helper functions
 
-int attempt_login(int sock, struct Packet packet, struct Client **client_list, unsigned int n_clients);
+int attempt_login(int sock, struct Packet packet, struct Client *client_list, unsigned int n_clients);
 
 int lo_ack(struct Client client);
 
@@ -76,8 +76,8 @@ void packet_to_message(struct Packet packet, char *message);
 
 struct Packet message_to_packet(char message[BUFFERSIZE]);
 
-
-
+void print_packet(struct Packet pack);
+void print_client(struct Client client);
 
 
 
