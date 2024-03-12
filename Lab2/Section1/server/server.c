@@ -121,7 +121,7 @@ void *client_handler(void *args) {
                 break;
 
             case QUERY:
-                if (send_query_message(self, &client_list, &session_list, n_sessions, n) >= 0)
+                if (send_query_message(self, &client_list, &session_list, n_sessions, n_clients) >= 0)
                     printf("Query sent successfully\n");
                 else printf("Query sent unsuccessfully\n");
                 break;

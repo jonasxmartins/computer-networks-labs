@@ -216,7 +216,7 @@ void nack_join(struct Packet pack)
 
 void ack_query(struct Packet pack)
 {
-    return;
+    printf("%s", pack.data);
 }
 
 
