@@ -79,7 +79,7 @@ void *client_handler(void *args) {
                 resp_packet.type = LO_ACK;
                 strcpy((char *)resp_packet.source, "SERVER");
                 strcpy((char *)resp_packet.data, "You are already logged in!.");
-                resp_packet.size = len(resp_packet.data);
+                resp_packet.size = strlen(resp_packet.data);
 
                 char response_buffer[BUFFERSIZE];
                 memset(response_buffer, 0, BUFFERSIZE);
@@ -88,7 +88,7 @@ void *client_handler(void *args) {
                 response_buffer[strlen(response_buffer)] = '\0';
                 if (send(sock, response_buffer, strlen(response_buffer), 0) < 0) {
                     perror("send failed");
-                    return -1;
+                    exit(-1);
                 }
                 break;
             case EXIT:
@@ -96,18 +96,18 @@ void *client_handler(void *args) {
                 self->in_session = 0;  
                 break;
             case JOIN:
-                if (attempt_join(self, req_packet, &session_list, n_sessions) >= 0)
+                if (attempt_join(self, req_packet, session_list, n_sessions) >= 0)
                     printf("Joining session successful\n");
                 else printf("Joining session unsuccessful\n");
                 break;
 
             case LEAVE_SESS:
-                if (attempt_leave(self, req_packet, &session_list, n_sessions) >= 0)
+                if (attempt_leave(self, req_packet, session_list, n_sessions) >= 0)
                     printf("Leaving session successful\n");
                 else printf("Leaving session unsuccessful\n");
                 break;
             case NEW_SESS:
-                if (attempt_new(self, req_packet, &session_list, n_sessions) >= 0)
+                if (attempt_new(self, req_packet, session_list, n_sessions) >= 0)
                     printf("New session successful\n");
                 else printf("New session unsuccessful\n");
                 break;
