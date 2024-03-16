@@ -20,20 +20,16 @@ int current_sock = 0;
 void *client_handler(void *args) {
 
     int sock = current_sock;
-
     char buffer[BUFFERSIZE];
     struct Packet login_packet;
     bool login_success = false;
     struct Client *self;
-    self->in_session = 0;
-    self->socket_fd = sock;
-    self->connected = 0;
 
     // Loop until login is successful
     while (!login_success) {
         memset(buffer, 0, BUFFERSIZE);
 
-        ssize_t received_len = recv(sock, buffer, BUFFERSIZE - 1, 0);
+        ssize_t received_len = recv(sock, buffer, BUFFERSIZE, 0);
         if (received_len < 0) {
             printf("Client not connected\n");
             break;
