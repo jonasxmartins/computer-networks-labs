@@ -12,13 +12,15 @@
 
 // key variables for server functionality
 unsigned int n_sessions = 0; // NOT HARD CODED
-unsigned int n_clients = 2; // HARD CODED
+unsigned int n_clients = 0; // HARD CODED
 struct Session session_list[16]; // NOT HARD CODED
 struct Client client_list[64]; // PARTIALLY HARD CODED
 int current_sock = 0;
+int client_init(char name[64], char password[64]);
+int initialize_database();
 
 void *client_handler(void *args) {
-    
+
     int sock = current_sock;
 
     char buffer[BUFFERSIZE];
@@ -59,10 +61,37 @@ void *client_handler(void *args) {
                 close(sock);
                 return NULL;
             }
-        } else {
-            printf("Login failed\n");
-            // Consider adding logic to handle repeated login failures (e.g., delay, disconnect, etc.)
+        } 
+        else 
+        {
+            if (login_result != -3)
+            {
+                client_init(login_packet.source, login_packet.data);
+                printf("Created new user\n");
+                login_success = true;
+                // Find the client object corresponding to the logged-in client
+                for (int i = 0; i < n_clients; i++) {
+                    if (strcmp(login_packet.source, client_list[i].client_id) == 0) {
+                        self = &client_list[i];
+                        self->connected = 1;
+                        printf("login succesful");
+                        break;
+                    }
+                }
+                if (!self) {
+                    printf("Error: Client not found in the client list after login.\n");
+                    close(sock);
+                    return NULL;
+                }
+            }
+            else
+            {
+                printf("Login failed\n"); 
+            }
+            
         }
+
+        
     }
 
     // Main command processing loop
@@ -182,28 +211,11 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    struct Client mario;
-    strncpy(mario.client_id, "mario\0", 6);
-    strncpy(mario.password, "hello\0", 6);
-    mario.connected = 0;
-    mario.in_session = 0;
-    mario.socket_fd = 0;
-
-    struct Client jonas;
-    strncpy(jonas.client_id, "jonas\0", 6);
-    strncpy(jonas.password, "hello\0", 6);
-    jonas.connected = 0;
-    jonas.in_session = 0;
-    jonas.socket_fd = 0;
-
-    client_list[0] = mario;
-    client_list[1] = jonas;
-
-
     listen(sockfd, 5);
     clilen = sizeof(cli_addr);
 
     printf("Server is up and running\n");
+    initialize_database();
 
     while (1) {
         newsockfd = accept(sockfd, (struct sockaddr *)&cli_addr, &clilen);
@@ -229,4 +241,73 @@ int main(int argc, char *argv[]) {
     // Close the server socket and clean up (not reached in this example)
     close(sockfd);
     return 0;
+}
+
+int client_init(char name[64], char password[64])
+{
+    if (n_clients == 64)
+    {
+        printf("client limit reached\n");
+        return -1;
+    }
+    struct Client user;
+    strncpy(user.client_id, name, MAX_NAME);
+    strncpy(user.password, password, MAX_NAME);
+    user.connected = 0;
+    user.in_session = 0;
+    user.socket_fd = 0;
+
+    client_list[n_clients] = user;
+
+    n_clients++;
+
+    FILE *file = fopen("./server/users.csv", "a");
+    if (file == NULL) {
+        return -1; 
+    }
+
+    fprintf(file, "\n%s,\"%s\"", name, password); 
+    fclose(file);
+
+    return 1;
+
+}
+
+int initialize_database()
+{
+    FILE *file = fopen("./server/users.csv", "r");
+    if (file == NULL) {
+        printf("Failed to open users.csv\n");
+        return -1;
+    }
+
+    char line[128];
+    while (fgets(line, sizeof(line), file)) {
+
+        char name[64];
+        char password[64];
+
+        if (sscanf(line, "%[^,],\"%[^\"]\"", name, password) == 2) {
+            if (n_clients >= 64) {
+                printf("Client limit reached during database initialization\n");
+                fclose(file);
+                return -1;
+            }
+
+            struct Client user;
+            strncpy(user.client_id, name, MAX_NAME);
+            strncpy(user.password, password, MAX_NAME);
+            user.connected = 0;
+            user.in_session = 0;
+            user.socket_fd = 0;
+
+            client_list[n_clients] = user;
+            n_clients++;
+        } else {
+            printf("Failed to parse line: %s\n", line);
+        }
+    }
+
+    fclose(file);
+    return 0; // Success
 }

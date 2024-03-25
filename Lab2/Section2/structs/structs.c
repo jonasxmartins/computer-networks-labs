@@ -41,24 +41,35 @@ struct Packet message_to_packet(char message[BUFFERSIZE])
 
 int attempt_login(int sock, struct Packet packet, struct Client *client_list, unsigned int n_clients) {
     int login_status = -1;
-
+    bool password = true;
     if (packet.type != LOGIN) return -2;
 
-    for (int i = 0; i < n_clients; i++) {
-        if (strcmp(packet.source, client_list[i].client_id) == 0 &&
-            strcmp(packet.data, client_list[i].password) == 0 &&
-            (client_list[i].connected == 0)) {
-            
-            client_list[i].connected = 1;
-            login_status = 0; // Login success
-            break;
+    for (int i = 0; i < n_clients; i++) 
+    {
+        if (strcmp(packet.source, client_list[i].client_id) == 0)
+        {
+            if (strcmp(packet.data, client_list[i].password) == 0)
+            {
+                if (client_list[i].connected == 0)
+                {
+                    client_list[i].connected = 1;
+                    login_status = 0; // Login success
+                    break;
+                }
+            }
+            else
+            {
+                printf("wrong password\n");
+                password = false;
+            }
         }
     }
+
     // Prepare a response packet
     struct Packet response_packet;
     memset(&response_packet, 0, sizeof(response_packet)); // Clear the response packet structure
 
-    if (login_status == 0) {
+    if (login_status == 0 || password) {
         // Login successful, prepare lo_ack response
         response_packet.type = LO_ACK;
         strcpy((char *)response_packet.source, "SERVER");
@@ -84,6 +95,7 @@ int attempt_login(int sock, struct Packet packet, struct Client *client_list, un
         perror("send failed");
         return -1;
     }
+    if (!password) login_status = -3;
     return login_status;
 }
 
