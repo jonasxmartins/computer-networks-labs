@@ -20,7 +20,6 @@ int current_sock = 0;
 void *client_handler(void *args) {
     
     int sock = current_sock;
-
     char buffer[BUFFERSIZE];
     struct Packet login_packet;
     bool login_success = false;
