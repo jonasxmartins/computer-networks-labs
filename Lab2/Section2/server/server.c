@@ -8,7 +8,10 @@
 #include <pthread.h>
 #include "structs/structs.h"
 #include <unistd.h>
+#include <time.h>
+#include <errno.h>
 
+#define TIMEOUT 300
 
 // key variables for server functionality
 unsigned int n_sessions = 0; // NOT HARD CODED
@@ -19,7 +22,8 @@ int current_sock = 0;
 int client_init(char name[64], char password[64]);
 int initialize_database();
 
-void *client_handler(void *args) {
+void *client_handler(void *args) 
+{
 
     int sock = current_sock;
 
@@ -29,20 +33,43 @@ void *client_handler(void *args) {
     struct Client *self;
     
     // Loop until login is successful
-    while (!login_success) {
+    while (!login_success) 
+    {
         memset(buffer, 0, BUFFERSIZE);
-        ssize_t received_len = recv(sock, buffer, BUFFERSIZE, 0);
         
-        if (received_len <= 0) {
-            if (received_len == 0) {
-                printf("client_handler: client disconnected.\n");
-            } else {
-                perror("client_handler: client not connected.\n");
-            }
-            close(sock);
-            return NULL;
-        }
+        time_t start = time(NULL);
 
+        while(1)
+       {
+            ssize_t received_len = recv(sock, buffer, BUFFERSIZE - 1, MSG_DONTWAIT);
+            if (received_len > 0)
+            {
+                break;
+            }
+            else if (received_len == 0) 
+            {
+                printf("Client disconnected\n");
+            } 
+            else if (received_len == -1 && errno == EAGAIN || errno == EWOULDBLOCK)
+            {
+                time_t now = time(NULL);
+                if (now - start >= TIMEOUT)
+                {
+                    struct Packet pack;
+                    attempt_leave(self, pack, session_list, n_sessions, sock);
+                    close(sock);
+                    return NULL;
+                }
+            }
+            else 
+            {
+                printf("Client disconnected\n");
+                close(sock);
+                return NULL;
+            }
+
+        }
+        
         login_packet = message_to_packet(buffer);
         int login_result = attempt_login(sock, login_packet, client_list, n_clients);
 
@@ -76,50 +103,57 @@ void *client_handler(void *args) {
                 login_success = true;
                 printf("client_handler: created user and login successful.");
             }
+            else
+            {
+                printf("Login failed\n"); 
+            }
         }
-        else {
-            printf("Login failed\n");
-            close(sock);
-            return NULL; 
-        }
-        // Login Attempt Complete  
     }
 
     // Main command processing loop
-    while (self->connected == 1) {
+    while (login_success && self && self->connected) 
+    {
+
         memset(buffer, 0, BUFFERSIZE);
+
         ssize_t received_len = recv(sock, buffer, BUFFERSIZE, 0);
-        if (received_len <= 0) {
-            if (received_len == 0) {
+        
+        if (received_len <= 0) 
+        {
+            if (received_len == 0) 
+            {
                 printf("Client disconnected\n");
-            } else {    
+            } 
+            else 
+            {
                 perror("Client not connected");
             }
             break;
         }
 
         struct Packet req_packet = message_to_packet(buffer);
-        switch (req_packet.type) {
-            // case LOGIN:
-            // {
-            // // already logged in
-            //     struct Packet resp_packet;
-            //     resp_packet.type = LO_ACK;
-            //     strcpy((char *)resp_packet.source, "SERVER");
-            //     strcpy((char *)resp_packet.data, "You are already logged in!.");
-            //     resp_packet.size = strlen(resp_packet.data);
+        switch (req_packet.type) 
+        {
+            case LOGIN:
+            {
+            // already logged in
+                struct Packet resp_packet;
+                resp_packet.type = LO_ACK;
+                strcpy((char *)resp_packet.source, "SERVER");
+                strcpy((char *)resp_packet.data, "You are already logged in!.");
+                resp_packet.size = strlen(resp_packet.data);
 
-            //     char response_buffer[BUFFERSIZE];
-            //     memset(response_buffer, 0, BUFFERSIZE);
+                char response_buffer[BUFFERSIZE];
+                memset(response_buffer, 0, BUFFERSIZE);
 
-            //     packet_to_message(resp_packet, response_buffer);
-            //     response_buffer[strlen(response_buffer)] = '\0';
-            //     if (send(sock, response_buffer, strlen(response_buffer), 0) < 0) {
-            //         perror("send failed");
-            //         exit(-1);
-            //     }
-            //     break;
-            // }
+                packet_to_message(resp_packet, response_buffer);
+                response_buffer[strlen(response_buffer)] = '\0';
+                if (send(sock, response_buffer, strlen(response_buffer), 0) < 0) {
+                    perror("send failed");
+                    exit(-1);
+                }
+                break;
+            }
             case EXIT:
             {
                 self->connected = 0;
@@ -175,7 +209,8 @@ void *client_handler(void *args) {
         }
     }
 
-    if (self) {
+    if (self) 
+    {
         self->connected = 0;
         self->in_session = 0;
     }
