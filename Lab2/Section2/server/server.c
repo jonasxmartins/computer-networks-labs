@@ -14,8 +14,8 @@
 #define TIMEOUT 300
 
 // key variables for server functionality
-unsigned int n_sessions = 0; // NOT HARD CODED
-unsigned int n_clients = 0; // HARD CODED
+int n_sessions = 0; // NOT HARD CODED
+int n_clients = 0; // HARD CODED
 struct Session session_list[16]; // NOT HARD CODED
 struct Client client_list[64]; // PARTIALLY HARD CODED
 int current_sock = 0;
@@ -180,14 +180,14 @@ void *client_handler(void *args)
             {
                 printf("client_handler: attempting to create session.\n");
                 int res = attempt_new(self, req_packet, session_list, n_sessions, sock);
-                printf("res%d\n", res);
+                printf("res%s\n", res);
                 if (res >= 0) {
                     printf("New session successful\n");
                     printf("client_handler: first session created.\n"
-                            "User name: %d\n"
-                            "User session_id: %d\n"
-                            "session_list[0]: %d\n"
-                            "session_list[0].clients_in_list[0]: %d\n", self->client_id, self->session_id, session_list[0].session_id, session_list[0].clients_in_list[0]->client_id);
+                            "User name: %s\n"
+                            "User session_id: %s\n"
+                            "session_list[0]: %s\n"
+                            "session_list[0].clients_in_list[0]: %s\n", self->client_id, self->session_id, session_list[0].session_id, session_list[0].clients_in_list[0]->client_id);
                 }
                 else printf("New session unsuccessful\n");
                 break;
