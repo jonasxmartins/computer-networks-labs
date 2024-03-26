@@ -669,14 +669,8 @@ void send_message(struct Client *self, struct Packet packet, int sock){
     int sess_index = 0;
     if (self->connected == 0 || self->in_session == 0) return;
 
-<<<<<<< HEAD
     for (int i = 0; i < n_sessions; i++){
-        if (strcmp(self->client_id, session_list[i].session_id) == 0) sess_index = i;
     }
-=======
-    for (int i = 0; i < n_sessions; i++)
-    {
->>>>>>> c0ecc98c1137f1fd634fac26ce33d8cdd2a31088
 
         for (int j = 0; j < session_list[i].n_clients_in_sess; j++)
         {
