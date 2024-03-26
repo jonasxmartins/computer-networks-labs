@@ -276,8 +276,8 @@ void *user_thread(void *arg)
         }
         case MESSAGE:
         {
-            int sz = strlen(buffer);
-            buffer[sz] = ' ';
+            int size = strlen(buffer);
+            buffer[size] = ' ';
             send_message_client(buffer);
         }
         default:
@@ -351,9 +351,10 @@ void create_or_join_session(char *buffer, int command)
 void send_message_client(char *buffer)
 {
     char message[BUFFERSIZE];
-    
+    printf("message::%s\n", buffer);
     struct Packet pack = make_packet(MESSAGE, strlen(buffer), client_id, buffer);
     packet_to_message(pack, message);
+    
     if (!send(fd, message, strlen(message), 0))
         {
             perror("send message");

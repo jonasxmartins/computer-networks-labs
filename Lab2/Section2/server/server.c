@@ -24,10 +24,10 @@ void print_packet(struct Packet pack);
 void print_client(struct Client client);
 
 // key variables for server functionality
-unsigned int n_sessions = 0; // NOT HARD CODED
-unsigned int n_clients = 0; // HARD CODED
-struct Session session_list[16]; // NOT HARD CODED
-struct Client client_list[64]; // PARTIALLY HARD CODED
+unsigned int n_sessions = 0; 
+unsigned int n_clients = 0; 
+struct Session session_list[16]; 
+struct Client client_list[64]; 
 int current_sock = 0;
 int client_init(char name[64], char password[64]);
 int initialize_database();
@@ -76,6 +76,7 @@ void *client_handler(void *args)
             for (int i = 0; i < n_clients; i++) {
                 if (strcmp(login_packet.source, client_list[i].client_id) == 0) {
                     self = &client_list[i];
+                    self->socket_fd = sock;
                     break;
                 }
             }
@@ -107,6 +108,7 @@ void *client_handler(void *args)
             }
         }
     }
+    self->socket_fd = sock;
 
     // Main command processing loop
     while (login_success && self && self->connected) 
@@ -456,7 +458,7 @@ int attempt_join(struct Client *self, struct Packet packet, int sock){
         memcpy(self->session_id, packet.data, packet.size);
         self->in_session = 1;
         int n_cli = session_list[sess_index].n_clients_in_sess;
-        session_list[sess_index].clients_in_list[n_cli-1] = self; 
+        session_list[sess_index].clients_in_list[n_cli] = self; 
         session_list[sess_index].n_clients_in_sess++;
     }
     struct Packet response_packet;
@@ -582,14 +584,13 @@ int attempt_new(struct Client *self, struct Packet packet, int sock){
             memcpy(newSession.session_id, packet.data, packet.size);
             newSession.clients_in_list[0] = self;
             newSession.n_clients_in_sess = 1;
-            session_list[n_sessions-1] = newSession;
+            session_list[n_sessions] = newSession;
             n_sessions++;
 
             self->in_session = 1;
             memcpy(self->session_id, packet.data, packet.size);
 
             printf("%s %s %d\n", self->client_id, self->session_id, self->in_session);
-            n_sessions++;  // Increment the total session count
         }
         else { status_ok = false; }
     }
@@ -668,28 +669,35 @@ void send_message(struct Client *self, struct Packet packet, int sock){
     int sess_index = 0;
     if (self->connected == 0 || self->in_session == 0) return;
 
-    for (int i = 0; i < n_sessions; i++){
-        if (strcmp(packet.data, session_list[i].session_id) == 0) sess_index = i;
-    }
+    for (int i = 0; i < n_sessions; i++)
+    {
 
+        for (int j = 0; j < session_list[i].n_clients_in_sess; j++)
+        {
+            if (strcmp(session_list[i].clients_in_list[j]->client_id, self->client_id)==0)
+            {
+                sess_index = i;
+                break;
+            }
+        }
+    }
     for (int i = 0; i < session_list[sess_index].n_clients_in_sess; i++){
 
-        if (strcmp(session_list[sess_index].clients_in_list[i]->client_id, self->client_id) != 0){
-            
+        if (strcmp(session_list[sess_index].clients_in_list[i]->client_id, self->client_id) != 0)
+        {
             struct Packet response_packet;
-            memset(&response_packet, 0, sizeof(response_packet)); // Clear the response packet structure
             
             response_packet.type = MESSAGE;
             response_packet.size = strlen(packet.data);
-            strcpy((char *)response_packet.source, self->client_id);
-            strcpy((char *)response_packet.data, packet.data);
-            response_packet.size = strlen(packet.data);
-            
+            strcpy(response_packet.source, self->client_id);
+            strcpy(response_packet.data, packet.data);
+
             char response_buffer[BUFFERSIZE];
             memset(response_buffer, 0, BUFFERSIZE);
             packet_to_message(response_packet, response_buffer);
 
-            if (send(session_list[sess_index].clients_in_list[i]->socket_fd, response_buffer, strlen(response_buffer), 0) < 0) {
+            if (send(session_list[sess_index].clients_in_list[i]->socket_fd, response_buffer, strlen(response_buffer), 0) < 0) 
+            {
                 perror("send failed");
                 return;
             }
