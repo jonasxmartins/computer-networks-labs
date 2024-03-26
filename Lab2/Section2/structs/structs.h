@@ -22,11 +22,10 @@
 #define SERVER 420
 
 struct Packet {
-    unsigned int type;
-    unsigned int size;
+    int type;
+    int size;
     char source[MAX_NAME];
     char data[MAX_DATA];
-
 };
 
 struct Client {
@@ -40,29 +39,29 @@ struct Client {
 
 struct Session {
     char session_id[MAX_DATA];
-    struct Client *clients_in_list;
+    struct Client * clients_in_list[16];
     int n_clients_in_sess;
 };
 
 // Server side helper functions
 
-int attempt_login(int sock, struct Packet packet, struct Client *client_list, unsigned int n_clients);
-
-int attempt_join(struct Client *self, struct Packet packet, struct Session *session_list, unsigned int n_sessions, int sock);
-
-int attempt_leave(struct Client *self, struct Packet packet, struct Session *session_list, unsigned int n_sessions, int sock);
-
-int attempt_new(struct Client *self, struct Packet packet, struct Session *session_list, unsigned int n_sessions, int sock);
-
-struct Packet make_packet(int type, int size, unsigned char source[MAX_NAME], unsigned char data[MAX_DATA]);
- 
-int send_query_message(struct Client *self, struct Client *client_list, struct Session *session_list, unsigned int n_sessions, unsigned int n_clients, int sock);
-
-void send_message(struct Client *self, struct Packet packet, struct Session *session_list, unsigned int n_sessions, int sock);
-
-void packet_to_message(struct Packet packet, char *message);
+struct Packet make_packet(int type, int size, char source[MAX_NAME], char data[MAX_DATA]);
 
 struct Packet message_to_packet(char message[BUFFERSIZE]);
+
+int attempt_login(int sock, struct Packet packet, struct Client *client_list, int n_clients);
+
+int attempt_join(struct Client *self, struct Packet packet, struct Session *session_list,  int n_sessions, int sock);
+
+int attempt_leave(struct Client *self, struct Packet packet, struct Session *session_list,  int n_sessions, int sock);
+
+int attempt_new(struct Client *self, struct Packet packet, struct Session *session_list,  int n_sessions, int sock);
+ 
+int send_query_message(struct Client *self, struct Client *client_list, struct Session *session_list,  int n_sessions,  int n_clients, int sock);
+
+void send_message(struct Client *self, struct Packet packet, struct Session *session_list,  int n_sessions, int sock);
+
+void packet_to_message(struct Packet packet, char *message);
 
 void print_packet(struct Packet pack);
 

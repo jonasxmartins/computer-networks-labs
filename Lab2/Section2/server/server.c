@@ -26,18 +26,18 @@ void *client_handler(void *args) {
     char buffer[BUFFERSIZE];
     struct Packet login_packet;
     bool login_success = false;
-    struct Client *self = NULL;  // Initialize to NULL
+    struct Client *self;
     
     // Loop until login is successful
     while (!login_success) {
         memset(buffer, 0, BUFFERSIZE);
-        ssize_t received_len = recv(sock, buffer, BUFFERSIZE - 1, 0);
+        ssize_t received_len = recv(sock, buffer, BUFFERSIZE, 0);
         
         if (received_len <= 0) {
             if (received_len == 0) {
-                printf("Client disconnected\n");
+                printf("client_handler: client disconnected.\n");
             } else {
-                perror("Client not connected");
+                perror("client_handler: client not connected.\n");
             }
             close(sock);
             return NULL;
@@ -46,8 +46,8 @@ void *client_handler(void *args) {
         login_packet = message_to_packet(buffer);
         int login_result = attempt_login(sock, login_packet, client_list, n_clients);
 
-        if (login_result >= 0) {
-            printf("Login successful\n");
+        if (login_result == 0) {
+            printf("client_handler: login successful.\n");
             login_success = true;
             // Find the client object corresponding to the logged-in client
             for (int i = 0; i < n_clients; i++) {
@@ -62,47 +62,37 @@ void *client_handler(void *args) {
                 return NULL;
             }
         } 
-        else 
-        {
-            if (login_result != -3)
-            {
-                client_init(login_packet.source, login_packet.data);
-                printf("Created new user\n");
-                login_success = true;
-                // Find the client object corresponding to the logged-in client
-                for (int i = 0; i < n_clients; i++) {
-                    if (strcmp(login_packet.source, client_list[i].client_id) == 0) {
-                        self = &client_list[i];
-                        self->connected = 1;
-                        printf("login succesful");
-                        break;
-                    }
-                }
+        else if (login_result != -3){
+            int registration_success = client_init(login_packet.source, login_packet.data);
+            if (registration_success == 1){
+                printf("client_handler: created new user.\n");
+                self = &client_list[n_clients-1];
                 if (!self) {
                     printf("Error: Client not found in the client list after login.\n");
                     close(sock);
                     return NULL;
                 }
+                self->connected = 1;
+                login_success = true;
+                printf("client_handler: created user and login successful.");
             }
-            else
-            {
-                printf("Login failed\n"); 
-            }
-            
         }
-
-        
+        else {
+            printf("Login failed\n");
+            close(sock);
+            return NULL; 
+        }
+        // Login Attempt Complete  
     }
 
     // Main command processing loop
-    while (login_success && self && self->connected) {
+    while (self->connected == 1) {
         memset(buffer, 0, BUFFERSIZE);
         ssize_t received_len = recv(sock, buffer, BUFFERSIZE, 0);
-        
         if (received_len <= 0) {
             if (received_len == 0) {
                 printf("Client disconnected\n");
-            } else {
+            } else {    
                 perror("Client not connected");
             }
             break;
@@ -110,26 +100,26 @@ void *client_handler(void *args) {
 
         struct Packet req_packet = message_to_packet(buffer);
         switch (req_packet.type) {
-            case LOGIN:
-            {
-            // already logged in
-                struct Packet resp_packet;
-                resp_packet.type = LO_ACK;
-                strcpy((char *)resp_packet.source, "SERVER");
-                strcpy((char *)resp_packet.data, "You are already logged in!.");
-                resp_packet.size = strlen(resp_packet.data);
+            // case LOGIN:
+            // {
+            // // already logged in
+            //     struct Packet resp_packet;
+            //     resp_packet.type = LO_ACK;
+            //     strcpy((char *)resp_packet.source, "SERVER");
+            //     strcpy((char *)resp_packet.data, "You are already logged in!.");
+            //     resp_packet.size = strlen(resp_packet.data);
 
-                char response_buffer[BUFFERSIZE];
-                memset(response_buffer, 0, BUFFERSIZE);
+            //     char response_buffer[BUFFERSIZE];
+            //     memset(response_buffer, 0, BUFFERSIZE);
 
-                packet_to_message(resp_packet, response_buffer);
-                response_buffer[strlen(response_buffer)] = '\0';
-                if (send(sock, response_buffer, strlen(response_buffer), 0) < 0) {
-                    perror("send failed");
-                    exit(-1);
-                }
-                break;
-            }
+            //     packet_to_message(resp_packet, response_buffer);
+            //     response_buffer[strlen(response_buffer)] = '\0';
+            //     if (send(sock, response_buffer, strlen(response_buffer), 0) < 0) {
+            //         perror("send failed");
+            //         exit(-1);
+            //     }
+            //     break;
+            // }
             case EXIT:
             {
                 self->connected = 0;
@@ -138,6 +128,7 @@ void *client_handler(void *args) {
             }
             case JOIN:
             {
+                printf("client_handler: attempting to join session.");
                 if (attempt_join(self, req_packet, session_list, n_sessions, sock) >= 0)
                     printf("Joining session successful\n");
                 else printf("Joining session unsuccessful\n");
@@ -145,6 +136,7 @@ void *client_handler(void *args) {
             }
             case LEAVE_SESS:
             {
+                printf("client_handler: attempting to leave session.");
                 if (attempt_leave(self, req_packet, session_list, n_sessions, sock) >= 0)
                     printf("Leaving session successful\n");
                 else printf("Leaving session unsuccessful\n");
@@ -152,6 +144,7 @@ void *client_handler(void *args) {
             }
             case NEW_SESS:
             {
+                printf("client_handler: attempting to create session.");
                 int res = attempt_new(self, req_packet, session_list, n_sessions, sock);
                 printf("res%d\n", res);
                 if (res >= 0) printf("New session successful\n");

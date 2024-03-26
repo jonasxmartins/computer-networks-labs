@@ -10,7 +10,7 @@
 #include <unistd.h>
 
 
-struct Packet make_packet(int type, int size, unsigned char source[MAX_NAME], unsigned char data[MAX_DATA])
+struct Packet make_packet(int type, int size, char source[MAX_NAME], char data[MAX_DATA])
 {
     struct Packet pack;
     pack.type = type;
@@ -39,37 +39,31 @@ struct Packet message_to_packet(char message[BUFFERSIZE])
 }
 
 
-int attempt_login(int sock, struct Packet packet, struct Client *client_list, unsigned int n_clients) {
+int attempt_login(int sock, struct Packet packet, struct Client *client_list, int n_clients) {
     int login_status = -1;
-    bool password = true;
-    if (packet.type != LOGIN) return -2;
 
-    for (int i = 0; i < n_clients; i++) 
-    {
-        if (strcmp(packet.source, client_list[i].client_id) == 0)
-        {
-            if (strcmp(packet.data, client_list[i].password) == 0)
-            {
-                if (client_list[i].connected == 0)
-                {
-                    client_list[i].connected = 1;
-                    login_status = 0; // Login success
-                    break;
-                }
-            }
-            else
-            {
-                printf("wrong password\n");
-                password = false;
+    for (int i = 0; i < n_clients; i++) {
+
+        if (strcmp(packet.source, client_list[i].client_id) == 0 && 
+            client_list[i].connected == 0){
+            if (strcmp(packet.data, client_list[i].password) != 0) { login_status = -3; }
+            else {
+                printf("attempt_login: client %s has been connected.", client_list[i].client_id);
+                client_list[i].connected = 1;
+                login_status = 0; // Login success
+                break;
             }
         }
+    }
+    if (login_status != 0){
+        printf("There was a problem in connecting the client.\n"); 
     }
 
     // Prepare a response packet
     struct Packet response_packet;
     memset(&response_packet, 0, sizeof(response_packet)); // Clear the response packet structure
 
-    if (login_status == 0 || password) {
+    if (login_status == 0) {
         // Login successful, prepare lo_ack response
         response_packet.type = LO_ACK;
         strcpy((char *)response_packet.source, "SERVER");
@@ -83,23 +77,24 @@ int attempt_login(int sock, struct Packet packet, struct Client *client_list, un
         strcpy((char *)response_packet.data, "Login Unsuccessful.");
         response_packet.size = 20;
     }
+    // Convert response_packet to a string
 
-    // Convert response_packet to a string or binary format as per your protocol
     char response_buffer[BUFFERSIZE];
     memset(response_buffer, 0, BUFFERSIZE);
-    // Assume packet_to_message does the conversion. Adjust as per your actual function signature and usage.
     packet_to_message(response_packet, response_buffer);
-    response_buffer[strlen(response_buffer)] = '\0';
+
     // Send the response
     if (send(sock, response_buffer, strlen(response_buffer), 0) < 0) {
-        perror("send failed");
+        perror("Failed to send attempt_login ACK or NAK message.");
         return -1;
     }
-    if (!password) login_status = -3;
     return login_status;
 }
 
-int attempt_join(struct Client *self, struct Packet packet, struct Session *session_list, unsigned int n_sessions, int sock){
+int attempt_join(struct Client *self, struct Packet packet, struct Session *session_list,  int n_sessions, int sock){
+    if (n_sessions == 0){
+        printf("attempt_join: there are no sessions to join.\n");
+    }
     int join_status = -1;
     int sess_index = 0;
     bool session_exists = false;
@@ -113,11 +108,11 @@ int attempt_join(struct Client *self, struct Packet packet, struct Session *sess
     if (self->connected == 1 && self->in_session == 0 && session_exists) join_status = 0;
     
     if (join_status == 0){
-        strcpy(self->session_id, packet.data);
+        memcpy(self->session_id, packet.data, packet.size);
         self->in_session = 1;
         int n_cli = session_list[sess_index].n_clients_in_sess;
-        session_list[sess_index].clients_in_list[n_cli] = *self; 
-        session_list[sess_index].n_clients_in_sess += 1;
+        session_list[sess_index].clients_in_list[n_cli-1] = self; 
+        session_list[sess_index].n_clients_in_sess++;
     }
     struct Packet response_packet;
     memset(&response_packet, 0, sizeof(response_packet)); // Clear the response packet structure
@@ -148,9 +143,13 @@ int attempt_join(struct Client *self, struct Packet packet, struct Session *sess
     return join_status;
 }
 
-int attempt_leave(struct Client *self, struct Packet packet, struct Session *session_list, unsigned int n_sessions, int sock) {
-    if (self->connected != 1 || self->in_session != 1) {
-        printf("Client is not in a session.\n");
+int attempt_leave(struct Client *self, struct Packet packet, struct Session *session_list,  int n_sessions, int sock) {
+    if (self->connected != 1 && self->in_session != 1) {
+        printf("attempt_leave: Client is not in a session.\n");
+        return -1;
+    }
+    else if (n_sessions == 0) {
+        printf("attempt_leave: There are no session to leave.\n");
         return -1;
     }
 
@@ -161,12 +160,10 @@ int attempt_leave(struct Client *self, struct Packet packet, struct Session *ses
             break;
         }
     }
-
     if (sess_index == -1) {
         printf("Session not found.\n");
         return -1;
     }
-
     // Find the client in the session's client list and remove them
     int client_index = -1;
     for (int i = 0; i < session_list[sess_index].n_clients_in_sess; i++) {
@@ -175,88 +172,117 @@ int attempt_leave(struct Client *self, struct Packet packet, struct Session *ses
             break;
         }
     }
-
     if (client_index == -1) {
         printf("Client not found in the session.\n");
         return -1;
     }
 
-    // Shift remaining clients in the session's client list
-    for (int i = client_index; i < session_list[sess_index].n_clients_in_sess - 1; i++) {
-        session_list[sess_index].clients_in_list[i] = session_list[sess_index].clients_in_list[i + 1];
+    if (session_list[sess_index].n_clients_in_sess-1 == 0){ // if that was the last client must delete session from session list
+        if(sess_index == 0) {  // if that was the only session
+            n_sessions = 0;
+        }
+        if(sess_index == n_sessions-1){ // if it was the last session in the session list simply pretend its not there
+            n_sessions--;
+        }
+        else { // otherwise shift the sessions in order to delete it
+            for (int i = sess_index; i < n_sessions; i++) {
+                session_list[i] = session_list[i + 1];
+                n_sessions--;
+            }
+        }
     }
-    session_list[sess_index].n_clients_in_sess--;
-
+    else if (client_index != session_list[sess_index].n_clients_in_sess - 1){ // if the client is not the last one in the client list
+        for (int i = client_index; i < session_list[sess_index].n_clients_in_sess - 1; i++) {
+            session_list[sess_index].clients_in_list[i] = session_list[sess_index].clients_in_list[i + 1];
+        }
+        session_list[sess_index].n_clients_in_sess--;
+    }
+    else {
+        session_list[sess_index].n_clients_in_sess--;
+    }
     self->in_session = 0;
     memset(self->session_id, 0, MAX_NAME);  // Assuming session_id is of length MAX_NAME
-
+    
     return 0; 
 }
 
 
-int attempt_new(struct Client *self, struct Packet packet, struct Session *session_list, unsigned int n_sessions, int sock){
-    // int new_status = -1;
-    // bool session_exists = false;
-    // for (int i = 0; i < n_sessions; i++) {
-    //     if (strcmp(packet.data, session_list[i].session_id) == 0) {
-    //         session_exists = true;
-    //         break;  // No need to continue if the session is found
-    //     }
-    // }
+int attempt_new(struct Client *self, struct Packet packet, struct Session *session_list,  int n_sessions, int sock){
+    bool status_ok = true;
 
-    // if (!session_exists && self->connected == 1 && self->in_session == 0) {
-    //     new_status = 0;
-    //     strcpy(self->session_id, packet.data);
-    //     self->in_session = 1;
-    //     struct Session new_session;
-    //     new_session.session_id = self->session_id;
-    //     struct Client clients[MAX_DATA];
-    //     clients[0] = *self;
-    //     new_session.clients_in_list = clients;_
+    if (n_sessions == 0){
+        struct Session newSession;
+        memcpy(newSession.session_id, packet.data, packet.size);
+        newSession.clients_in_list[0] = self;
+        newSession.n_clients_in_sess = 1;
+        session_list[0] = newSession;
+        n_sessions++;
 
-    //     strcpy(new_session.session_id, packet.data);
-    //     new_session.n_clients_in_sess = 1;
-    //     new_session.clients_in_list[0] = *self;
-    //     session_list[n_sessions] = new_session; // Assuming there's enough space
-    //     printf("%s %s %d\n", self->client_id, self->session_id, self->in_session);
-    //     n_sessions++;  // Increment the total session count
-    // }
+        self->in_session = 1;
+        memcpy(self->session_id, packet.data, packet.size);
+    }
+    else {
+        for (int i = 0; i < n_sessions; i++) {
+            if (strcmp(packet.data, session_list[i].session_id) == 0) {
+                status_ok = false;
+                break;  // No need to continue if the session is found
+            }
+        }
+        if (status_ok && self->connected == 1 && self->in_session == 0) {
+            struct Session newSession;
+            memcpy(newSession.session_id, packet.data, packet.size);
+            newSession.clients_in_list[0] = self;
+            newSession.n_clients_in_sess = 1;
+            session_list[n_sessions-1] = newSession;
+            n_sessions++;
 
-    // struct Packet response_packet;
-    // memset(&response_packet, 0, sizeof(response_packet)); // Clear the response packet structure
+            self->in_session = 1;
+            memcpy(self->session_id, packet.data, packet.size);
 
-    // if (new_status == 0) {
-    //     // Login successful, prepare lo_ack response
-    //     response_packet.type = NS_ACK;
-    //     strcpy((char *)response_packet.source, "SERVER");
-    //     strcpy((char *)response_packet.data, "New Session Successful.");
-    //     response_packet.size = 24;
+            printf("%s %s %d\n", self->client_id, self->session_id, self->in_session);
+            n_sessions++;  // Increment the total session count
+        }
+        else { status_ok = false; }
+    }
 
-    // }
-    // char response_buffer[BUFFERSIZE];
-    // memset(response_buffer, 0, BUFFERSIZE);
-    // packet_to_message(response_packet, response_buffer);
-    // response_buffer[strlen(response_buffer)] = '\0';
-    // if (send(sock, response_buffer, strlen(response_buffer), 0) < 0) {
-    //     perror("send failed");
-    //     return -1;
-    // }
-    // printf("%d\n", new_status);
-    return 0;
+    struct Packet response_packet;
+    memset(&response_packet, 0, sizeof(response_packet)); // Clear the response packet structure
+
+    if (status_ok) {
+        // Login successful, prepare lo_ack response
+        response_packet.type = NS_ACK;
+        strcpy((char *)response_packet.source, "SERVER");
+        strcpy((char *)response_packet.data, "New Session Successful.");
+        response_packet.size = 24;
+
+    }
+    char response_buffer[BUFFERSIZE];
+    memset(response_buffer, 0, BUFFERSIZE);
+    packet_to_message(response_packet, response_buffer);
+
+    if (send(sock, response_buffer, strlen(response_buffer), 0) < 0) {
+        perror("send failed");
+        return -1;
+    }
+    else {    
+        printf("attempt_new: created new session successfully.\n");
+        return 0;
+    }
 }
+
 
 int send_query_message(struct Client *self, 
                        struct Client *client_list, 
                        struct Session *session_list, 
-                       unsigned int n_sessions, 
-                       unsigned int n_clients
+                        int n_sessions, 
+                        int n_clients
                        , int sock) {
 
     char message[BUFFERSIZE] = {0}; // Assuming BUFFERSIZE is defined and sufficient
     strcat(message, "Online Users:\n");
 
     // Iterate through clients to list online users
-    for (unsigned int i = 0; i < n_clients; i++) {
+    for ( int i = 0; i < n_clients; i++) {
         if (client_list[i].connected) {
             strcat(message, client_list[i].client_id);
             strcat(message, "\n");
@@ -265,7 +291,7 @@ int send_query_message(struct Client *self,
     strcat(message, "Available Sessions:\n");
 
     // Iterate through sessions to list available sessions
-    for (unsigned int i = 0; i < n_sessions; i++) {
+    for ( int i = 0; i < n_sessions; i++) {
         strcat(message, session_list[i].session_id);
         strcat(message, " - Clients: ");
         char numClients[10]; // To hold the number of clients in the session as string
@@ -294,7 +320,7 @@ int send_query_message(struct Client *self,
     return 0;
 }
 
-void send_message(struct Client *self, struct Packet packet, struct Session *session_list, unsigned int n_sessions, int sock){
+void send_message(struct Client *self, struct Packet packet, struct Session *session_list,  int n_sessions, int sock){
     int sess_index = 0;
     if (self->connected == 0 || self->in_session == 0) return;
 
