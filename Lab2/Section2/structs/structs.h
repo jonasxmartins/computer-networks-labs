@@ -44,28 +44,8 @@ struct Session {
 };
 
 // Server side helper functions
-
 struct Packet make_packet(int type, int size, char source[MAX_NAME], char data[MAX_DATA]);
-
 struct Packet message_to_packet(char message[BUFFERSIZE]);
-
-int attempt_login(int sock, struct Packet packet, struct Client *client_list, int n_clients);
-
-int attempt_join(struct Client *self, struct Packet packet, struct Session *session_list,  int n_sessions, int sock);
-
-int attempt_leave(struct Client *self, struct Packet packet, struct Session *session_list,  int n_sessions, int sock);
-
-int attempt_new(struct Client *self, struct Packet packet, struct Session *session_list,  int n_sessions, int sock);
- 
-int send_query_message(struct Client *self, struct Client *client_list, struct Session *session_list,  int n_sessions,  int n_clients, int sock);
-
-void send_message(struct Client *self, struct Packet packet, struct Session *session_list,  int n_sessions, int sock);
-
 void packet_to_message(struct Packet packet, char *message);
-
-void print_packet(struct Packet pack);
-
-void print_client(struct Client client);
-
 
 #endif
