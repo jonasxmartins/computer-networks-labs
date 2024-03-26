@@ -128,7 +128,7 @@ void *client_handler(void *args) {
             }
             case JOIN:
             {
-                printf("client_handler: attempting to join session.");
+                printf("client_handler: attempting to join session.\n");
                 if (attempt_join(self, req_packet, session_list, n_sessions, sock) >= 0)
                     printf("Joining session successful\n");
                 else printf("Joining session unsuccessful\n");
@@ -136,7 +136,7 @@ void *client_handler(void *args) {
             }
             case LEAVE_SESS:
             {
-                printf("client_handler: attempting to leave session.");
+                printf("client_handler: attempting to leave session.\n");
                 if (attempt_leave(self, req_packet, session_list, n_sessions, sock) >= 0)
                     printf("Leaving session successful\n");
                 else printf("Leaving session unsuccessful\n");
@@ -144,10 +144,17 @@ void *client_handler(void *args) {
             }
             case NEW_SESS:
             {
-                printf("client_handler: attempting to create session.");
+                printf("client_handler: attempting to create session.\n");
                 int res = attempt_new(self, req_packet, session_list, n_sessions, sock);
                 printf("res%d\n", res);
-                if (res >= 0) printf("New session successful\n");
+                if (res >= 0) {
+                    printf("New session successful\n");
+                    printf("client_handler: first session created.\n"
+                            "User name: %d\n"
+                            "User session_id: %d\n"
+                            "session_list[0]: %d\n"
+                            "session_list[0].clients_in_list[0]: %d\n", self->client_id, self->session_id, session_list[0].session_id, session_list[0].clients_in_list[0]->client_id);
+                }
                 else printf("New session unsuccessful\n");
                 break;
             }

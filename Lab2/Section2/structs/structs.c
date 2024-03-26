@@ -167,7 +167,7 @@ int attempt_leave(struct Client *self, struct Packet packet, struct Session *ses
     // Find the client in the session's client list and remove them
     int client_index = -1;
     for (int i = 0; i < session_list[sess_index].n_clients_in_sess; i++) {
-        if (strcmp(self->client_id, session_list[sess_index].clients_in_list[i].client_id) == 0) {
+        if (strcmp(self->client_id, session_list[sess_index].clients_in_list[i]->client_id) == 0) {
             client_index = i;
             break;
         }
@@ -217,9 +217,13 @@ int attempt_new(struct Client *self, struct Packet packet, struct Session *sessi
         newSession.n_clients_in_sess = 1;
         session_list[0] = newSession;
         n_sessions++;
-
         self->in_session = 1;
         memcpy(self->session_id, packet.data, packet.size);
+        printf("atempt_new: first session created.\n"
+                            "User name: %d\n"
+                            "User session_id: %d\n"
+                            "session_list[0]: %d\n"
+                            "session_list[0].clients_in_list[0]: %d\n", self->client_id, self->session_id, session_list[0].session_id, session_list[0].clients_in_list[0]->client_id);
     }
     else {
         for (int i = 0; i < n_sessions; i++) {
@@ -330,7 +334,7 @@ void send_message(struct Client *self, struct Packet packet, struct Session *ses
 
     for (int i = 0; i < session_list[sess_index].n_clients_in_sess; i++){
 
-        if (strcmp(session_list[sess_index].clients_in_list[i].client_id, self->client_id) != 0){
+        if (strcmp(session_list[sess_index].clients_in_list[i]->client_id, self->client_id) != 0){
             
             struct Packet response_packet;
             memset(&response_packet, 0, sizeof(response_packet)); // Clear the response packet structure
@@ -345,7 +349,7 @@ void send_message(struct Client *self, struct Packet packet, struct Session *ses
             memset(response_buffer, 0, BUFFERSIZE);
             packet_to_message(response_packet, response_buffer);
 
-            if (send(session_list[sess_index].clients_in_list[i].socket_fd, response_buffer, strlen(response_buffer), 0) < 0) {
+            if (send(session_list[sess_index].clients_in_list[i]->socket_fd, response_buffer, strlen(response_buffer), 0) < 0) {
                 perror("send failed");
                 return;
             }
